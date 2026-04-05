@@ -1,0 +1,69 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.cursor/
+.vscode/
+.idea/
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+app-example
+
+# generated native folders
+/ios
+/android
+
+# prettier
+.prettier 
+
+# Local SQLite database
+data/
+*.db
+
+# Firebase / Google services (contienen API keys reales)
+google-services.json
+GoogleService-Info.plist
+
+# Claude Code configuración local
+.claude/settings.local.json
+
+# Electron builds
+electron-dist/
+release/
+out/
+
+# Android keystore
+*.keystore

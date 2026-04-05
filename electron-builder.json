@@ -1,0 +1,42 @@
+{
+  "appId": "com.luserv2.contacts",
+  "productName": "Contacts",
+  "directories": {
+    "output": "release",
+    "buildResources": "assets"
+  },
+  "files": [
+    "electron/**/*",
+    "dist/**/*",
+    "!node_modules/**",
+    "node_modules/better-sqlite3/**/*",
+    "node_modules/bindings/**/*",
+    "node_modules/file-uri-to-path/**/*"
+  ],
+  "extraMetadata": {
+    "main": "electron/main.js"
+  },
+  "npmRebuild": false,
+  "asar": {
+    "smartUnpack": true
+  },
+  "asarUnpack": [
+    "node_modules/better-sqlite3/**/*"
+  ],
+  "win": {
+    "target": [{ "target": "nsis", "arch": ["x64"] }],
+    "icon": "assets/images/icon.ico"
+  },
+  "mac": {
+    "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+    "icon": "assets/images/icon.png"
+  },
+  "linux": {
+    "target": [{ "target": "AppImage", "arch": ["x64"] }],
+    "icon": "assets/images/icon.png"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}
