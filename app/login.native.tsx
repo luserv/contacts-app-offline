@@ -1,4 +1,5 @@
-// Android / iOS: usa expo-auth-session para Google OAuth (requiere dev build, no Expo Go)
+// Android: usa @react-native-google-signin/google-signin (SDK nativo, no requiere redirect URI)
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -7,29 +8,12 @@ import { auth } from '../utils/firebase';
 import { useAuth } from '../utils/authContext';
 
 const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID!;
-const ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID!;
 
-// Intentar cargar expo-auth-session - falla silenciosamente en Expo Go
-// (expo-crypto requiere módulos nativos no incluidos en Expo Go)
-let _useAuthRequest: any = null;
-try {
-  _useAuthRequest = require('expo-auth-session/providers/google').useAuthRequest;
-} catch {
-  // Expo Go no tiene ExpoCryptoAES - Google Sign-In requiere un dev build
-}
-
-// Hook estable: la condición nunca cambia en el ciclo de vida de la app
-function useGoogleAuth() {
-  if (_useAuthRequest) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return _useAuthRequest({
-      webClientId: WEB_CLIENT_ID,
-      androidClientId: ANDROID_CLIENT_ID,
-      scopes: ['profile', 'email', 'https://www.googleapis.com/auth/drive.file'],
-    }) as [any, any, any];
-  }
-  return [null, null, async () => ({ type: 'cancel' as const })];
-}
+GoogleSignin.configure({
+  webClientId: WEB_CLIENT_ID,
+  scopes: ['profile', 'email', 'https://www.googleapis.com/auth/drive.file'],
+  offlineAccess: true,
+});
 
 export default function LoginScreen() {
   const { user, isGuest, loading, continueAsGuest, setDriveToken } = useAuth();
@@ -37,40 +21,32 @@ export default function LoginScreen() {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const [request, response, promptAsync] = useGoogleAuth();
-
   useEffect(() => {
     if (!loading && (user || isGuest)) router.replace('/');
   }, [user, isGuest, loading]);
 
-  useEffect(() => {
-    if (response) {
-      console.log('OAuth response:', JSON.stringify(response, null, 2));
-    }
-    if (response?.type === 'success') {
-      const idToken = response.params?.id_token ?? response.authentication?.idToken;
-      const accessToken = response.params?.access_token ?? response.authentication?.accessToken;
-      if (!idToken) {
-        setError('No se recibió el token de Google. Revisa los Client IDs en .env');
-        return;
-      }
-      const credential = GoogleAuthProvider.credential(idToken);
-      signInWithCredential(auth, credential)
-        .then(() => { if (accessToken) setDriveToken(accessToken); })
-        .catch((e: any) => setError(e.message));
-    }
-    if (response?.type === 'error') setError(response.error?.message ?? 'Error al iniciar sesión');
-  }, [response]);
-
   const handleSignIn = async () => {
-    if (!_useAuthRequest) {
-      setError('Google Sign-In requiere un Development Build (no funciona en Expo Go).');
-      return;
-    }
     setError(null);
     setBusy(true);
     try {
-      await promptAsync();
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken;
+      if (!idToken) throw new Error('No se recibió el token de Google.');
+      const tokens = await GoogleSignin.getTokens();
+      const credential = GoogleAuthProvider.credential(idToken, tokens.accessToken);
+      await signInWithCredential(auth, credential);
+      setDriveToken(tokens.accessToken);
+    } catch (e: any) {
+      if (e.code === statusCodes.SIGN_IN_CANCELLED) {
+        // usuario canceló, no mostrar error
+      } else if (e.code === statusCodes.IN_PROGRESS) {
+        // ya hay un sign-in en curso
+      } else if (e.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        setError('Google Play Services no disponible.');
+      } else {
+        setError(e.message ?? 'Error al iniciar sesión');
+      }
     } finally {
       setBusy(false);
     }
