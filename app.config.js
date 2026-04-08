@@ -9,7 +9,7 @@ export default {
     orientation: "portrait",
     platforms: ["android", "web"],
     android: {
-      package: "com.luserv2.contacts",
+      package: "com.luserv.c0ntacts",
       googleServicesFile: "./google-services.json"
     },
     plugins: [
@@ -20,6 +20,7 @@ export default {
           iosAppId: process.env.ADMOB_IOS_APP_ID,
         }
       ],
+      "@react-native-google-signin/google-signin",
       "expo-font",
       "expo-router",
       "expo-web-browser"
