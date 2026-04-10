@@ -17,6 +17,7 @@ import Dropdown from '../../components/Dropdown';
 import { MaritalStatus, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { edadEnFecha, getZodiacSymbol } from '../../utils/contactUtils';
+import { rescheduleExpiredBirthdayNotifications } from '../../utils/notifications';
 
 const DOC_TYPES = ['Pasaporte', 'Cédula', 'Licencia de conducir', 'Otro'];
 
@@ -124,7 +125,10 @@ export default function HomeScreen() {
   const [searchRefreshKey, setSearchRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
-    fetchContacts();
+    fetchContacts().then(loaded => {
+      // Android: DATE triggers son de una sola vez — reprogramar las que ya dispararon
+      rescheduleExpiredBirthdayNotifications(loaded);
+    });
   }, [fetchContacts]);
 
   React.useEffect(() => {
@@ -142,6 +146,8 @@ export default function HomeScreen() {
   }, [fetchContacts]);
 
   useFocusEffect(useCallback(() => {
+    fetchContacts();
+    setSearchRefreshKey(k => k + 1);
     setModalVisible(false);
     setSortModalVisible(false);
   }, []));

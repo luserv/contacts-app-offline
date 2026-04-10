@@ -23,11 +23,13 @@ const LANGUAGES: { code: Lang; label: string; flag: string }[] = [
 
 export default function Config() {
   const [status, setStatus] = useState<string | null>(null);
+  const [notifStatus, setNotifStatus] = useState<string | null>(null);
+  const [driveStatus, setDriveStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [notifCount, setNotifCount] = useState<number | null>(null);
   const { contacts, fetchContacts, importVcf } = useContacts();
   const { t, lang, setLang } = useI18n();
-  const { user, licensed, signIn, signOutUser, driveToken } = useAuth();
+  const { user, licensed, signIn, signOutUser, driveToken, refreshDriveToken } = useAuth();
   const router = useRouter();
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronFS;
 
@@ -83,17 +85,17 @@ export default function Config() {
   const handleScheduleNotifications = async () => {
     try {
       setIsLoading(true);
-      setStatus(null);
+      setNotifStatus(null);
       const granted = await requestNotificationPermissions();
       if (!granted) {
-        setStatus(t.config.notifPermError);
+        setNotifStatus(t.config.notifPermError);
         return;
       }
       const count = await scheduleAllBirthdayNotifications(contacts);
       setNotifCount(count);
-      setStatus(t.config.notifScheduled(count));
+      setNotifStatus(t.config.notifScheduled(count));
     } catch (e) {
-      setStatus(t.config.notifErrorPrefix + (e instanceof Error ? e.message : String(e)));
+      setNotifStatus(t.config.notifErrorPrefix + (e instanceof Error ? e.message : String(e)));
     } finally {
       setIsLoading(false);
     }
@@ -227,21 +229,39 @@ export default function Config() {
   // ── Drive upload ──────────────────────────────────────────────────────────
 
   const handleDriveUpload = async () => {
-    if (!driveToken) { promptSignIn(); return; }
+    let token = driveToken;
+    if (!token) {
+      token = await refreshDriveToken();
+      if (!token) { promptSignIn(); return; }
+    }
     try {
       setIsLoading(true);
-      setStatus(null);
+      setDriveStatus(null);
       let base64: string;
       if (typeof window !== 'undefined' && (window as any).electronDrive) {
         base64 = await (window as any).electronDrive.readDBAsBase64();
       } else {
         base64 = await FileSystem.readAsStringAsync(DB_PATH, { encoding: FileSystem.EncodingType.Base64 });
       }
-      await uploadDB(driveToken, base64);
-      setStatus(t.drive.uploadSuccess);
+      await uploadDB(token, base64);
+      setDriveStatus(t.drive.uploadSuccess);
     } catch (e: any) {
-      if (e.message === 'TOKEN_EXPIRED') promptSignIn();
-      else setStatus(t.drive.errorPrefix + e.message);
+      if (e.message === 'TOKEN_EXPIRED') {
+        const newToken = await refreshDriveToken();
+        if (newToken) {
+          try {
+            const base64 = await FileSystem.readAsStringAsync(DB_PATH, { encoding: FileSystem.EncodingType.Base64 });
+            await uploadDB(newToken, base64);
+            setDriveStatus(t.drive.uploadSuccess);
+          } catch {
+            promptSignIn();
+          }
+        } else {
+          promptSignIn();
+        }
+      } else {
+        setDriveStatus(t.drive.errorPrefix + e.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -253,10 +273,12 @@ export default function Config() {
     if (!driveToken) { promptSignIn(); return; }
 
     const doRestore = async () => {
+      let token = driveToken ?? await refreshDriveToken();
+      if (!token) { promptSignIn(); return; }
       try {
         setIsLoading(true);
-        setStatus(null);
-        const base64 = await downloadDB(driveToken!);
+        setDriveStatus(null);
+        const base64 = await downloadDB(token);
         if (typeof window !== 'undefined' && (window as any).electronDrive) {
           const result = await (window as any).electronDrive.writeDBFromBase64(base64);
           if (result?.error) throw new Error(result.error);
@@ -266,12 +288,17 @@ export default function Config() {
           if (!dirInfo.exists) await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
           await FileSystem.writeAsStringAsync(DB_PATH, base64, { encoding: FileSystem.EncodingType.Base64 });
         }
-        setStatus(t.drive.restoreSuccess);
+        setDriveStatus(t.drive.restoreSuccess);
         await fetchContacts();
       } catch (e: any) {
-        if (e.message === 'NO_BACKUP') setStatus(t.drive.notFound);
-        else if (e.message === 'TOKEN_EXPIRED') promptSignIn();
-        else setStatus(t.drive.errorPrefix + e.message);
+        if (e.message === 'NO_BACKUP') setDriveStatus(t.drive.notFound);
+        else if (e.message === 'TOKEN_EXPIRED') {
+          const newToken = await refreshDriveToken();
+          if (newToken) doRestore();
+          else promptSignIn();
+        } else {
+          setDriveStatus(t.drive.errorPrefix + e.message);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -327,6 +354,11 @@ export default function Config() {
         ) : (
           <View style={styles.statusBox}>
             <Text style={styles.statusText}>{t.config.notificationsUnavailable}</Text>
+          </View>
+        )}
+        {notifStatus && (
+          <View style={[styles.statusBox, notifStatus.startsWith('Error') && styles.statusBoxError]}>
+            <Text style={styles.statusText}>{notifStatus}</Text>
           </View>
         )}
       </View>
@@ -443,6 +475,11 @@ export default function Config() {
           >
             <Text style={styles.buttonText}>{isLoading ? t.drive.restoring : t.drive.restore}</Text>
           </Pressable>
+          {driveStatus && (
+            <View style={[styles.statusBox, driveStatus.startsWith('Error') && styles.statusBoxError]}>
+              <Text style={styles.statusText}>{driveStatus}</Text>
+            </View>
+          )}
         </View>
       )}
     </ScrollView>

@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n } from '../utils/i18n';
 
 export default function BottomTabBar() {
   const router = useRouter();
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <Pressable style={styles.tab} onPress={() => router.push('/')}>
         <Ionicons name="home-outline" size={24} color="#007AFF" />
         <Text style={styles.label}>{t.tabs.contacts}</Text>

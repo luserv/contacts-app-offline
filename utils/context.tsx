@@ -97,7 +97,7 @@ export interface ContactBankAccount {
 
 interface ContactsContextType {
     contacts: Contact[];
-    fetchContacts: () => Promise<void>;
+    fetchContacts: () => Promise<Contact[]>;
     createContact: (data: {
         first_name: string;
         middle_name?: string;
@@ -223,12 +223,15 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
         surname: toDisplay(c.surname),
     });
 
-    const fetchContacts = useCallback(async () => {
+    const fetchContacts = useCallback(async (): Promise<Contact[]> => {
         try {
             const result = await db.getAllAsync<Contact>('SELECT * FROM contact ORDER BY first_name ASC;');
-            setContacts(result.map(normalizeContact));
+            const normalized = result.map(normalizeContact);
+            setContacts(normalized);
+            return normalized;
         } catch (e) {
             console.error(e);
+            return [];
         }
     }, []);
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactBankAccount, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { sharedStyles as s } from './contactStyles';
@@ -134,10 +134,11 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
       </View>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-        <View style={s.modalOverlay}>
-          <View style={s.modalContainer}>
-            <Text style={s.modalTitle}>{editingId !== null ? t.common.edit : t.bankAccounts.addTitle}</Text>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={s.modalOverlay}>
+            <View style={s.modalContainer}>
+              <Text style={s.modalTitle}>{editingId !== null ? t.common.edit : t.bankAccounts.addTitle}</Text>
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
               <Text style={s.fieldLabel}>{t.bankAccounts.bankName}</Text>
               <TextInput
@@ -187,16 +188,17 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
 
             </ScrollView>
 
-            <View style={s.modalActions}>
-              <Pressable style={s.btnCancel} onPress={() => setModalVisible(false)}>
-                <Text style={s.btnCancelText}>{t.common.cancel}</Text>
-              </Pressable>
-              <Pressable style={s.btnSave} onPress={handleSave}>
-                <Text style={s.btnSaveText}>{t.common.save}</Text>
-              </Pressable>
+              <View style={s.modalActions}>
+                <Pressable style={s.btnCancel} onPress={() => setModalVisible(false)}>
+                  <Text style={s.btnCancelText}>{t.common.cancel}</Text>
+                </Pressable>
+                <Pressable style={s.btnSave} onPress={handleSave}>
+                  <Text style={s.btnSaveText}>{t.common.save}</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );

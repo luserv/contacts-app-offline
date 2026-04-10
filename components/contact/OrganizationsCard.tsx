@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactOrganization, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { edadEnFecha, formatDate } from '../../utils/contactUtils';
@@ -144,8 +144,9 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
       </View>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-        <View style={s.modalOverlay}>
-          <View style={s.modalContainer}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={s.modalOverlay}>
+            <View style={s.modalContainer}>
             <Text style={s.modalTitle}>
               {editingId !== null ? t.common.edit : t.organizations.addTitle}
             </Text>
@@ -157,8 +158,8 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
               />
               {suggestions.length > 0 && (
                 <View style={styles.suggestions}>
-                  {suggestions.map(sg => (
-                    <Pressable key={sg} style={styles.suggestionRow} onPress={() => { setOrgName(sg); setSuggestions([]); }}>
+                  {suggestions.map((sg, i) => (
+                    <Pressable key={`${i}-${sg}`} style={styles.suggestionRow} onPress={() => { setOrgName(sg); setSuggestions([]); }}>
                       <Text style={styles.suggestionText}>{sg}</Text>
                     </Pressable>
                   ))}
@@ -172,8 +173,8 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
               />
               {achievementSuggestions.length > 0 && (
                 <View style={styles.suggestions}>
-                  {achievementSuggestions.map(sg => (
-                    <Pressable key={sg} style={styles.suggestionRow} onPress={() => { setAchievement(sg); setAchievementSuggestions([]); }}>
+                  {achievementSuggestions.map((sg, i) => (
+                    <Pressable key={`${i}-${sg}`} style={styles.suggestionRow} onPress={() => { setAchievement(sg); setAchievementSuggestions([]); }}>
                       <Text style={styles.suggestionText}>{sg}</Text>
                     </Pressable>
                   ))}
@@ -190,15 +191,16 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
             </ScrollView>
 
             <View style={s.modalActions}>
-              <Pressable style={s.btnCancel} onPress={() => setModalVisible(false)}>
-                <Text style={s.btnCancelText}>{t.common.cancel}</Text>
-              </Pressable>
-              <Pressable style={s.btnSave} onPress={handleSave}>
-                <Text style={s.btnSaveText}>{t.common.save}</Text>
-              </Pressable>
+                <Pressable style={s.btnCancel} onPress={() => setModalVisible(false)}>
+                  <Text style={s.btnCancelText}>{t.common.cancel}</Text>
+                </Pressable>
+                <Pressable style={s.btnSave} onPress={handleSave}>
+                  <Text style={s.btnSaveText}>{t.common.save}</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );

@@ -117,17 +117,23 @@ export async function uploadDB(token: string, base64: string): Promise<void> {
     parents: [folderId],
   });
 
-  const body = new Blob([
-    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n`,
-    `--${boundary}\r\nContent-Type: application/x-sqlite3\r\n\r\n`,
-    binary,
-    `\r\n--${boundary}--`,
-  ]);
+  // React Native no soporta Blob([ArrayBufferView]), se construye el body manualmente
+  const encoder = new TextEncoder();
+  const p1 = encoder.encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n`);
+  const p2 = encoder.encode(`--${boundary}\r\nContent-Type: application/x-sqlite3\r\n\r\n`);
+  const p3 = encoder.encode(`\r\n--${boundary}--`);
+
+  const bodyBytes = new Uint8Array(p1.length + p2.length + binary.length + p3.length);
+  let offset = 0;
+  bodyBytes.set(p1, offset); offset += p1.length;
+  bodyBytes.set(p2, offset); offset += p2.length;
+  bodyBytes.set(binary, offset); offset += binary.length;
+  bodyBytes.set(p3, offset);
 
   await driveJSON(`${DRIVE_UPLOAD}?uploadType=multipart`, token, {
     method: 'POST',
     headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-    body,
+    body: bodyBytes.buffer,
   });
 }
 
