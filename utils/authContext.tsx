@@ -25,6 +25,7 @@ interface AuthState {
   signOutUser: () => Promise<void>;
   continueAsGuest: () => Promise<void>;
   setDriveToken: (token: string | null) => void;
+  refreshDriveToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -37,6 +38,7 @@ const AuthContext = createContext<AuthState>({
   signOutUser: async () => {},
   continueAsGuest: async () => {},
   setDriveToken: () => {},
+  refreshDriveToken: async () => null,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -72,6 +74,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsGuest(false);
         await AsyncStorage.removeItem(GUEST_KEY);
         await checkLicense(u.uid);
+        // Android: obtener token de Drive al iniciar si ya hay sesión
+        if (Platform.OS === 'android') {
+          try {
+            const { GoogleSignin } = require('@react-native-google-signin/google-signin');
+            const tokens = await GoogleSignin.getTokens();
+            setDriveToken(tokens.accessToken);
+          } catch {}
+        }
       } else {
         setLicensed(false);
         // Restaurar modo invitado si estaba activo
@@ -130,8 +140,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsGuest(true);
   }, []);
 
+  /** En Android, refresca el Drive access token usando GoogleSignin (maneja refresh automático). */
+  const refreshDriveToken = useCallback(async (): Promise<string | null> => {
+    if (Platform.OS !== 'android') return null;
+    try {
+      const { GoogleSignin } = require('@react-native-google-signin/google-signin');
+      const tokens = await GoogleSignin.getTokens();
+      setDriveToken(tokens.accessToken);
+      return tokens.accessToken;
+    } catch {
+      return null;
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isGuest, licensed, loading, driveToken, signIn, signOutUser, continueAsGuest, setDriveToken }}>
+    <AuthContext.Provider value={{ user, isGuest, licensed, loading, driveToken, signIn, signOutUser, continueAsGuest, setDriveToken, refreshDriveToken }}>
       {children}
     </AuthContext.Provider>
   );

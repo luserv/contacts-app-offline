@@ -8,9 +8,20 @@ export default {
     scheme: "contacts",
     orientation: "portrait",
     platforms: ["android", "web"],
+    icon: "./assets/images/icon.png",
+    splash: {
+      image: "./assets/images/splash-icon.png",
+      resizeMode: "contain",
+      backgroundColor: "#007AFF"
+    },
     android: {
       package: "com.luserv.c0ntacts",
-      googleServicesFile: "./google-services.json"
+      googleServicesFile: "./google-services.json",
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/android-icon-foreground.png",
+        backgroundImage: "./assets/images/android-icon-background.png",
+        monochromeImage: "./assets/images/android-icon-monochrome.png"
+      }
     },
     plugins: [
       [

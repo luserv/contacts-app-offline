@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactEmail, ContactPhone, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { sharedStyles as s } from './contactStyles';
@@ -172,6 +172,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
 
       {/* Modal teléfono */}
       <Modal visible={phoneModal} animationType="slide" transparent onRequestClose={() => setPhoneModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={s.modalOverlay}>
           <View style={s.modalContainer}>
             <Text style={s.modalTitle}>{editingPhoneId !== null ? t.common.edit : t.contactInfo.addPhone}</Text>
@@ -198,10 +199,12 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal correo */}
       <Modal visible={emailModal} animationType="slide" transparent onRequestClose={() => setEmailModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={s.modalOverlay}>
           <View style={s.modalContainer}>
             <Text style={s.modalTitle}>{editingEmailId !== null ? t.common.edit : t.contactInfo.addEmail}</Text>
@@ -228,6 +231,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );

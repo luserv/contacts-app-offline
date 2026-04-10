@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Relationship, RelationshipType, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { sharedStyles as s } from './contactStyles';
@@ -106,8 +106,9 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
       </View>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-        <View style={s.modalOverlay}>
-          <View style={s.modalContainer}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={s.modalOverlay}>
+            <View style={s.modalContainer}>
             {step === 'type' ? (
               <>
                 <Text style={s.modalTitle}>{t.relationships.whatRelationship}</Text>
@@ -181,7 +182,8 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
               </>
             )}
           </View>
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Dropdown from '../Dropdown';
 import { MaritalStatus, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
@@ -61,62 +61,64 @@ export default function EditContactModal({ visible, contact, onClose, onSaved }:
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={s.modalOverlay}>
-        <View style={s.modalContainer}>
-          <Text style={s.modalTitle}>{t.editContact.title}</Text>
-          <ScrollView showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalContainer}>
+            <Text style={s.modalTitle}>{t.editContact.title}</Text>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-            <Text style={s.fieldLabel}>{t.contacts.firstName} <Text style={s.required}>{t.common.required}</Text></Text>
-            <TextInput style={s.input} value={firstName} onChangeText={setFirstName} placeholderTextColor="#C7C7CC" placeholder={t.contacts.firstName} />
+              <Text style={s.fieldLabel}>{t.contacts.firstName} <Text style={s.required}>{t.common.required}</Text></Text>
+              <TextInput style={s.input} value={firstName} onChangeText={setFirstName} placeholderTextColor="#C7C7CC" placeholder={t.contacts.firstName} />
 
-            <Text style={s.fieldLabel}>{t.contacts.middleName}</Text>
-            <TextInput style={s.input} value={middleName} onChangeText={setMiddleName} placeholderTextColor="#C7C7CC" placeholder={t.contacts.middleName} />
+              <Text style={s.fieldLabel}>{t.contacts.middleName}</Text>
+              <TextInput style={s.input} value={middleName} onChangeText={setMiddleName} placeholderTextColor="#C7C7CC" placeholder={t.contacts.middleName} />
 
-            <Text style={s.fieldLabel}>{t.contacts.surname} <Text style={s.required}>{t.common.required}</Text></Text>
-            <TextInput style={s.input} value={surname} onChangeText={setSurname} placeholderTextColor="#C7C7CC" placeholder={t.contacts.surname} />
+              <Text style={s.fieldLabel}>{t.contacts.surname} <Text style={s.required}>{t.common.required}</Text></Text>
+              <TextInput style={s.input} value={surname} onChangeText={setSurname} placeholderTextColor="#C7C7CC" placeholder={t.contacts.surname} />
 
-            <Text style={s.fieldLabel}>{t.contacts.gender}</Text>
-            <View style={styles.genderRow}>
-              {(['MALE', 'FEMALE'] as const).map(g => (
-                <Pressable
-                  key={g}
-                  style={[styles.genderChip, gender === g && styles.genderChipSelected]}
-                  onPress={() => setGender(prev => prev === g ? null : g)}
-                >
-                  <Text style={[styles.genderChipText, gender === g && styles.genderChipTextSelected]}>
-                    {g === 'MALE' ? t.contacts.male : t.contacts.female}
-                  </Text>
-                </Pressable>
-              ))}
+              <Text style={s.fieldLabel}>{t.contacts.gender}</Text>
+              <View style={styles.genderRow}>
+                {(['MALE', 'FEMALE'] as const).map(g => (
+                  <Pressable
+                    key={g}
+                    style={[styles.genderChip, gender === g && styles.genderChipSelected]}
+                    onPress={() => setGender(prev => prev === g ? null : g)}
+                  >
+                    <Text style={[styles.genderChipText, gender === g && styles.genderChipTextSelected]}>
+                      {g === 'MALE' ? t.contacts.male : t.contacts.female}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={s.fieldLabel}>{t.contacts.birthdate}</Text>
+              <TextInput
+                style={s.input} value={birthdate} onChangeText={v => formatDate(v, setBirthdate)}
+                placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor="#C7C7CC"
+                keyboardType={Platform.OS === 'web' ? 'default' : 'numeric'} maxLength={10}
+              />
+
+              <Text style={s.fieldLabel}>{t.contacts.maritalStatus}</Text>
+              <Dropdown
+                options={maritalStatuses.map(ms => ({ label: ms.marital_status, value: ms.status_id }))}
+                value={statusId}
+                onSelect={setStatusId}
+                allowNull
+              />
+
+            </ScrollView>
+
+            <View style={s.modalActions}>
+              <Pressable style={s.btnCancel} onPress={onClose}>
+                <Text style={s.btnCancelText}>{t.common.cancel}</Text>
+              </Pressable>
+              <Pressable style={s.btnSave} onPress={handleSave}>
+                <Text style={s.btnSaveText}>{t.common.save}</Text>
+              </Pressable>
             </View>
-
-            <Text style={s.fieldLabel}>{t.contacts.birthdate}</Text>
-            <TextInput
-              style={s.input} value={birthdate} onChangeText={v => formatDate(v, setBirthdate)}
-              placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor="#C7C7CC"
-              keyboardType={Platform.OS === 'web' ? 'default' : 'numeric'} maxLength={10}
-            />
-
-            <Text style={s.fieldLabel}>{t.contacts.maritalStatus}</Text>
-            <Dropdown
-              options={maritalStatuses.map(ms => ({ label: ms.marital_status, value: ms.status_id }))}
-              value={statusId}
-              onSelect={setStatusId}
-              allowNull
-            />
-
-          </ScrollView>
-
-          <View style={s.modalActions}>
-            <Pressable style={s.btnCancel} onPress={onClose}>
-              <Text style={s.btnCancelText}>{t.common.cancel}</Text>
-            </Pressable>
-            <Pressable style={s.btnSave} onPress={handleSave}>
-              <Text style={s.btnSaveText}>{t.common.save}</Text>
-            </Pressable>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
