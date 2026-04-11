@@ -1,8 +1,10 @@
 import 'dotenv/config';
 
+const IS_PROD = process.env.APP_ENV === 'production';
+
 export default {
   expo: {
-    name: "Contacts",
+    name: IS_PROD ? "Contacts" : "Contacts (dev)",
     slug: "contacts-app-offline",
     version: "1.0.0",
     scheme: "contacts",
@@ -18,9 +20,8 @@ export default {
       package: "com.luserv.c0ntacts",
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
-        foregroundImage: "./assets/images/android-icon-foreground.png",
-        backgroundImage: "./assets/images/android-icon-background.png",
-        monochromeImage: "./assets/images/android-icon-monochrome.png"
+        foregroundImage: "./assets/images/icon.png",
+        backgroundColor: "#007AFF"
       }
     },
     plugins: [
@@ -37,6 +38,7 @@ export default {
       "expo-web-browser"
     ],
     extra: {
+      appEnv: process.env.APP_ENV ?? "development",
       eas: {
         projectId: "018fed16-4d84-4465-93bc-6c4f29dbca24"
       }
