@@ -250,7 +250,12 @@ export default function Config() {
         const newToken = await refreshDriveToken();
         if (newToken) {
           try {
-            const base64 = await FileSystem.readAsStringAsync(DB_PATH, { encoding: FileSystem.EncodingType.Base64 });
+            let base64: string;
+            if (typeof window !== 'undefined' && (window as any).electronDrive) {
+              base64 = await (window as any).electronDrive.readDBAsBase64();
+            } else {
+              base64 = await FileSystem.readAsStringAsync(DB_PATH, { encoding: FileSystem.EncodingType.Base64 });
+            }
             await uploadDB(newToken, base64);
             setDriveStatus(t.drive.uploadSuccess);
           } catch {
