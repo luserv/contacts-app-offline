@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, protocol, net, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const url = require('url');
 const { createTablesSql, migrationsSql, seedSql } = require('../utils/dbSchema');
 
 // Registrar el protocolo antes de que la app esté lista
@@ -153,22 +152,35 @@ ipcMain.handle('db:writeFromBase64', (_event, base64) => {
 
 // ── IPC: Google OAuth (reemplaza signInWithPopup de Firebase) ─────────────────
 
-ipcMain.handle('auth:googleOAuth', (_event, { authUrl, redirectUri }) => {
+ipcMain.handle('auth:googleOAuth', (_event, { authUrl, redirectUri, silent = false }) => {
   return new Promise((resolve, reject) => {
     let handled = false;
 
     const authWindow = new BrowserWindow({
-      width: 500,
-      height: 650,
-      alwaysOnTop: true,
+      width: silent ? 1 : 500,
+      height: silent ? 1 : 650,
+      show: !silent,
+      alwaysOnTop: !silent,
       webPreferences: { nodeIntegration: false, contextIsolation: true },
     });
+
+    // Timeout para re-auth silenciosa: si Google no responde en 8 s, falla limpiamente
+    const timeout = silent
+      ? setTimeout(() => {
+          if (!handled) {
+            handled = true;
+            authWindow.destroy();
+            reject(new Error('SILENT_AUTH_TIMEOUT'));
+          }
+        }, 8000)
+      : null;
 
     authWindow.loadURL(authUrl);
 
     authWindow.webContents.on('will-redirect', (event, redirectUrl) => {
       if (!redirectUrl.startsWith(redirectUri) || handled) return;
       handled = true;
+      if (timeout) clearTimeout(timeout);
       event.preventDefault();
       authWindow.destroy();
 
@@ -185,7 +197,10 @@ ipcMain.handle('auth:googleOAuth', (_event, { authUrl, redirectUri }) => {
     });
 
     authWindow.on('closed', () => {
-      if (!handled) reject(new Error('Autenticación cancelada'));
+      if (!handled) {
+        if (timeout) clearTimeout(timeout);
+        reject(new Error(silent ? 'SILENT_AUTH_TIMEOUT' : 'Autenticación cancelada'));
+      }
     });
   });
 });
@@ -265,6 +280,25 @@ process.on('uncaughtException', (err) => {
   app.quit();
 });
 
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js':   'application/javascript',
+  '.css':  'text/css',
+  '.json': 'application/json',
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif':  'image/gif',
+  '.svg':  'image/svg+xml',
+  '.ico':  'image/x-icon',
+  '.ttf':  'font/ttf',
+  '.otf':  'font/otf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.map':  'application/json',
+  '.wasm': 'application/wasm',
+};
+
 app.whenReady().then(() => {
   // Protocolo app:// sirve archivos desde la carpeta dist
   protocol.handle('app', (request) => {
@@ -284,7 +318,14 @@ app.whenReady().then(() => {
       ? fullPath
       : path.join(distPath, 'index.html');
 
-    return net.fetch(url.pathToFileURL(targetPath).toString());
+    const ext = path.extname(targetPath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+    // Leer el archivo directamente (funciona dentro del asar) para poder
+    // establecer el Content-Type correcto. net.fetch con file:// no garantiza
+    // el MIME type, lo que hace que Electron rechace cargar fuentes (.ttf).
+    const data = fs.readFileSync(targetPath);
+    return new Response(data, { headers: { 'Content-Type': contentType } });
   });
 
   try {
