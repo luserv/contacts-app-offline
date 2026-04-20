@@ -12,6 +12,10 @@ App de gestión de contactos **100% offline** con base de datos SQLite local. Di
 - **Cuentas bancarias** — banco, número de cuenta, tipo y etiqueta
 - **Organizaciones** — asocia contactos a organizaciones con logros y fechas
 - **Relaciones entre contactos** — padre, madre, hijo/a, cónyuge, etc.
+- **Notas de texto libre** — agrega notas privadas a cada contacto
+- **URLs / sitios web** — guarda y abre enlaces directamente desde el detalle del contacto
+- **Calendario de cumpleaños** — vista mensual con días resaltados, navegación de meses y lista de contactos que cumplen años ese día
+- **Búsqueda avanzada con filtros** — filtrado por edad (`age:23`, `age:>18`, `age:<=30`) e intersección de condiciones con `&`
 - **Importación de contactos vía VCF/vCard** — desde el dispositivo
 - **Exportación e importación de la base de datos** — backup local o compartir por cualquier canal
 - **Backup en Google Drive** — solo archivos creados por la app (`drive.file` scope)
@@ -110,6 +114,31 @@ No requiere `google-services.json` ni configuración extra de Firebase.
 npm run start
 # Luego presionar 'w' para abrir en el navegador
 ```
+
+---
+
+## Generar APK de producción (Android)
+
+### Con EAS Build (recomendado, requiere cuenta Expo)
+
+```bash
+npm install -g eas-cli
+eas build --platform android --profile production
+```
+
+### Build local con Gradle (requiere Android Studio)
+
+```bash
+# 1. Generar el proyecto nativo si no existe
+npx expo prebuild --platform android
+
+# 2. Compilar el APK release
+cd android && ./gradlew assembleRelease
+```
+
+El APK queda en `android/app/build/outputs/apk/release/app-release.apk`.
+
+> Para firmar el APK con tu keystore configura las variables `KEYSTORE_*` en `android/gradle.properties` o usa EAS Build que gestiona la firma automáticamente.
 
 ---
 
