@@ -7,17 +7,19 @@ import ContactInfoCard from '../../components/contact/ContactInfoCard';
 import KeywordsCard from '../../components/contact/KeywordsCard';
 import DocumentsCard from '../../components/contact/DocumentsCard';
 import EditContactModal from '../../components/contact/EditContactModal';
+import NotesCard from '../../components/contact/NotesCard';
 import OrganizationsCard from '../../components/contact/OrganizationsCard';
 import RelationshipsCard from '../../components/contact/RelationshipsCard';
-import { ContactBankAccount, ContactEmail, ContactKeyword, ContactOrganization, ContactPhone, IdentityCard, Relationship, useContacts } from '../../utils/context';
+import UrlsCard from '../../components/contact/UrlsCard';
+import { ContactBankAccount, ContactEmail, ContactKeyword, ContactNote, ContactOrganization, ContactPhone, ContactUrl, IdentityCard, Relationship, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
-import { calcularEdad, ContactDetail, EXCLUDED_FIELDS, getZodiacKey, getZodiacSymbol } from '../../utils/contactUtils';
+import { calcularEdad, ContactDetail, displayName, EXCLUDED_FIELDS, formatBirthdate, getZodiacKey, getZodiacSymbol } from '../../utils/contactUtils';
 
 export default function ContactDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { t } = useI18n();
-  const { getContact, getIdentityCards, getRelationships, getContactOrganizations, getContactPhones, getContactEmails, getContactKeywords, getBankAccounts, fetchContacts, deleteContact } = useContacts();
+  const { t, lang } = useI18n();
+  const { getContact, getIdentityCards, getRelationships, getContactOrganizations, getContactPhones, getContactEmails, getContactKeywords, getBankAccounts, getContactNotes, getContactUrls, fetchContacts, deleteContact } = useContacts();
 
   const [contact, setContact] = useState<ContactDetail | null>(null);
   const [identityCards, setIdentityCards] = useState<IdentityCard[]>([]);
@@ -27,6 +29,8 @@ export default function ContactDetailScreen() {
   const [emails, setEmails] = useState<ContactEmail[]>([]);
   const [keywords, setKeywords] = useState<ContactKeyword[]>([]);
   const [bankAccounts, setBankAccounts] = useState<ContactBankAccount[]>([]);
+  const [notes, setNotes] = useState<ContactNote[]>([]);
+  const [contactUrls, setContactUrls] = useState<ContactUrl[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editVisible, setEditVisible] = useState(false);
@@ -65,6 +69,8 @@ export default function ContactDetailScreen() {
       setEmails(await getContactEmails(id));
       setKeywords(await getContactKeywords(id));
       setBankAccounts(await getBankAccounts(id));
+      setNotes(await getContactNotes(id));
+      setContactUrls(await getContactUrls(id));
     } catch {
       setError(t.detail.loadError);
     } finally {
@@ -91,7 +97,7 @@ export default function ContactDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerTitle: `${contact.first_name} ${contact.surname}` }} />
+      <Stack.Screen options={{ headerTitle: displayName(contact) }} />
 
       <ScrollView contentContainerStyle={styles.content}>
 
@@ -108,7 +114,7 @@ export default function ContactDetailScreen() {
             )}
           </View>
           <Text style={styles.name}>
-            {[contact.first_name, contact.middle_name, contact.surname].filter(Boolean).join(' ')}
+            {displayName(contact)}
           </Text>
           {(() => {
             const key = getZodiacKey(contact.birthdate);
@@ -141,14 +147,14 @@ export default function ContactDetailScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.label}>{t.detail.nameLabel}</Text>
             <Text style={styles.value}>
-              {[contact.first_name, contact.middle_name, contact.surname].filter(Boolean).join(' ')}
+              {displayName(contact)}
             </Text>
           </View>
 
           {contact.birthdate && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>{t.detail.dobLabel}</Text>
-              <Text style={styles.value}>{contact.birthdate}</Text>
+              <Text style={styles.value}>{formatBirthdate(contact.birthdate, lang)}</Text>
               {calcularEdad(contact.birthdate, t.age) && (
                 <Text style={styles.edad}>{calcularEdad(contact.birthdate, t.age)}</Text>
               )}
@@ -185,6 +191,8 @@ export default function ContactDetailScreen() {
         <OrganizationsCard contactId={id} birthdate={contact.birthdate} initialOrganizations={organizations} />
         <KeywordsCard contactId={id} initialKeywords={keywords} />
         <BankAccountCard contactId={id} initialAccounts={bankAccounts} />
+        <UrlsCard contactId={id} initialUrls={contactUrls} />
+        <NotesCard contactId={id} initialNotes={notes} />
 
       </ScrollView>
 

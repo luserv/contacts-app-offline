@@ -101,6 +101,31 @@ export function edadEnFecha(birthdate: string, targetDate: string): { years: num
   return { years, months, days };
 }
 
+export const MONTH_NAMES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+export const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+export function parseBirthdate(birthdate: string): { day: number; month: number; year: number } | null {
+  const parts = birthdate.split('/');
+  if (parts.length !== 3) return null;
+  const [d, m, y] = parts.map(Number);
+  if (!d || !m || !y) return null;
+  return { day: d, month: m, year: y };
+}
+
+export function displayName(c: { first_name: string; middle_name?: string | null; surname: string }): string {
+  return [c.first_name, c.middle_name, c.surname].filter(Boolean).join(' ');
+}
+
+export function formatBirthdate(birthdate: string | null | undefined, lang: 'es' | 'en'): string | null {
+  if (!birthdate) return null;
+  const parsed = parseBirthdate(birthdate);
+  if (!parsed || parsed.month < 1 || parsed.month > 12) return null;
+  const { day: d, month: m, year: y } = parsed;
+  return lang === 'es'
+    ? `${d} de ${MONTH_NAMES_ES[m - 1]} de ${y}`
+    : `${MONTH_NAMES_EN[m - 1]} ${d}, ${y}`;
+}
+
 export function calcularEdad(birthdate: string, age: T['age']): string | null {
   const parts = birthdate.split('/');
   if (parts.length !== 3) return null;

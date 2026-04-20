@@ -3,9 +3,10 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../../utils/authContext';
 import { downloadDB, uploadDB } from '../../utils/driveSync';
+import { reloadDatabase } from '../../utils/db';
 
 const PAYPAL_ME = process.env.EXPO_PUBLIC_PAYPAL_ME ?? 'https://paypal.me/TUUSUARIO';
 const LICENSE_PRICE = process.env.EXPO_PUBLIC_LICENSE_PRICE ?? '4.99';
@@ -25,7 +26,7 @@ export default function Config() {
   const [status, setStatus] = useState<string | null>(null);
   const [notifStatus, setNotifStatus] = useState<string | null>(null);
   const [driveStatus, setDriveStatus] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingOp, setLoadingOp] = useState<string | null>(null);
   const [notifCount, setNotifCount] = useState<number | null>(null);
   const { contacts, fetchContacts, importVcf } = useContacts();
   const { t, lang, setLang } = useI18n();
@@ -40,7 +41,7 @@ export default function Config() {
 
   const handleExport = async () => {
     try {
-      setIsLoading(true);
+      setLoadingOp('export');
       setStatus(null);
 
       // Electron
@@ -78,13 +79,13 @@ export default function Config() {
       console.error(e);
       setStatus(t.config.exportErrorPrefix + (e instanceof Error ? e.message : String(e)));
     } finally {
-      setIsLoading(false);
+      setLoadingOp(null);
     }
   };
 
   const handleScheduleNotifications = async () => {
     try {
-      setIsLoading(true);
+      setLoadingOp('notifications');
       setNotifStatus(null);
       const granted = await requestNotificationPermissions();
       if (!granted) {
@@ -97,13 +98,13 @@ export default function Config() {
     } catch (e) {
       setNotifStatus(t.config.notifErrorPrefix + (e instanceof Error ? e.message : String(e)));
     } finally {
-      setIsLoading(false);
+      setLoadingOp(null);
     }
   };
 
   const handleImportVcf = async () => {
     try {
-      setIsLoading(true);
+      setLoadingOp('vcf');
       setStatus(null);
       let content: string | null = null;
 
@@ -124,7 +125,7 @@ export default function Config() {
     } catch (e) {
       setStatus('Error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
-      setIsLoading(false);
+      setLoadingOp(null);
     }
   };
 
@@ -133,7 +134,7 @@ export default function Config() {
     if (typeof window !== 'undefined' && (window as any).electronFS) {
       if (!confirm(t.config.importConfirm)) return;
       try {
-        setIsLoading(true);
+        setLoadingOp('import');
         setStatus(null);
         const result = await (window as any).electronFS.importDB();
         if (result.canceled) return;
@@ -143,7 +144,7 @@ export default function Config() {
       } catch (e) {
         setStatus(t.config.importErrorPrefix + (e instanceof Error ? e.message : String(e)));
       } finally {
-        setIsLoading(false);
+        setLoadingOp(null);
       }
       return;
     }
@@ -156,7 +157,7 @@ export default function Config() {
         {
           text: t.config.importContinue, style: 'destructive', onPress: async () => {
             try {
-              setIsLoading(true);
+              setLoadingOp('import');
               setStatus(null);
 
               const result = await DocumentPicker.getDocumentAsync({
@@ -165,7 +166,7 @@ export default function Config() {
               });
 
               if (result.canceled) {
-                setIsLoading(false);
+                setLoadingOp(null);
                 return;
               }
 
@@ -178,6 +179,8 @@ export default function Config() {
               }
 
               await FileSystem.copyAsync({ from: file.uri, to: DB_PATH });
+              await reloadDatabase();
+              await fetchContacts();
 
               setStatus(t.config.importSuccess);
               Alert.alert(t.config.importSuccessTitle, t.config.importSuccessMsg);
@@ -185,7 +188,7 @@ export default function Config() {
               console.error(e);
               setStatus(t.config.importErrorPrefix + (e instanceof Error ? e.message : String(e)));
             } finally {
-              setIsLoading(false);
+              setLoadingOp(null);
             }
           },
         },
@@ -235,7 +238,7 @@ export default function Config() {
       if (!token) { promptSignIn(); return; }
     }
     try {
-      setIsLoading(true);
+      setLoadingOp('upload');
       setDriveStatus(null);
       let base64: string;
       if (typeof window !== 'undefined' && (window as any).electronDrive) {
@@ -268,7 +271,7 @@ export default function Config() {
         setDriveStatus(t.drive.errorPrefix + e.message);
       }
     } finally {
-      setIsLoading(false);
+      setLoadingOp(null);
     }
   };
 
@@ -281,7 +284,7 @@ export default function Config() {
       let token = driveToken ?? await refreshDriveToken();
       if (!token) { promptSignIn(); return; }
       try {
-        setIsLoading(true);
+        setLoadingOp('restore');
         setDriveStatus(null);
         const base64 = await downloadDB(token);
         if (typeof window !== 'undefined' && (window as any).electronDrive) {
@@ -294,6 +297,7 @@ export default function Config() {
           await FileSystem.writeAsStringAsync(DB_PATH, base64, { encoding: FileSystem.EncodingType.Base64 });
         }
         setDriveStatus(t.drive.restoreSuccess);
+        await reloadDatabase();
         await fetchContacts();
       } catch (e: any) {
         if (e.message === 'NO_BACKUP') setDriveStatus(t.drive.notFound);
@@ -305,7 +309,7 @@ export default function Config() {
           setDriveStatus(t.drive.errorPrefix + e.message);
         }
       } finally {
-        setIsLoading(false);
+        setLoadingOp(null);
       }
     };
 
@@ -350,11 +354,13 @@ export default function Config() {
         </Text>
         {notificationsAvailable ? (
           <Pressable
-            style={[styles.button, styles.buttonNotif, isLoading && styles.buttonDisabled]}
+            style={[styles.button, styles.buttonNotif, !!loadingOp && styles.buttonDisabled]}
             onPress={handleScheduleNotifications}
-            disabled={isLoading}
+            disabled={!!loadingOp}
           >
-            <Text style={styles.buttonText}>{t.config.scheduleBtn}</Text>
+            {loadingOp === 'notifications'
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.buttonText}>{t.config.scheduleBtn}</Text>}
           </Pressable>
         ) : (
           <View style={styles.statusBox}>
@@ -431,27 +437,33 @@ export default function Config() {
         <Text style={styles.cardDesc}>{t.config.databaseDesc}</Text>
 
         <Pressable
-          style={[styles.button, styles.buttonVcf, isLoading && styles.buttonDisabled]}
+          style={[styles.button, styles.buttonVcf, !!loadingOp && styles.buttonDisabled]}
           onPress={handleImportVcf}
-          disabled={isLoading}
+          disabled={!!loadingOp}
         >
-          <Text style={styles.buttonText}>{t.config.importVcfBtn}</Text>
+          {loadingOp === 'vcf'
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.buttonText}>{t.config.importVcfBtn}</Text>}
         </Pressable>
 
         <Pressable
-          style={[styles.button, styles.buttonExport, isLoading && styles.buttonDisabled]}
+          style={[styles.button, styles.buttonExport, !!loadingOp && styles.buttonDisabled]}
           onPress={handleExport}
-          disabled={isLoading}
+          disabled={!!loadingOp}
         >
-          <Text style={styles.buttonText}>{t.config.exportBtn}</Text>
+          {loadingOp === 'export'
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.buttonText}>{t.config.exportBtn}</Text>}
         </Pressable>
 
         <Pressable
-          style={[styles.button, styles.buttonImport, isLoading && styles.buttonDisabled]}
+          style={[styles.button, styles.buttonImport, !!loadingOp && styles.buttonDisabled]}
           onPress={handleImport}
-          disabled={isLoading}
+          disabled={!!loadingOp}
         >
-          <Text style={styles.buttonText}>{t.config.importBtn}</Text>
+          {loadingOp === 'import'
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.buttonText}>{t.config.importBtn}</Text>}
         </Pressable>
 
         {status && (
@@ -467,18 +479,22 @@ export default function Config() {
           <Text style={styles.cardTitle}>{t.drive.title}</Text>
           <Text style={styles.cardDesc}>{t.drive.desc}</Text>
           <Pressable
-            style={[styles.button, styles.buttonDrive, isLoading && styles.buttonDisabled]}
+            style={[styles.button, styles.buttonDrive, !!loadingOp && styles.buttonDisabled]}
             onPress={handleDriveUpload}
-            disabled={isLoading}
+            disabled={!!loadingOp}
           >
-            <Text style={styles.buttonText}>{isLoading ? t.drive.uploading : t.drive.upload}</Text>
+            {loadingOp === 'upload'
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.buttonText}>{t.drive.upload}</Text>}
           </Pressable>
           <Pressable
-            style={[styles.button, styles.buttonDriveRestore, isLoading && styles.buttonDisabled]}
+            style={[styles.button, styles.buttonDriveRestore, !!loadingOp && styles.buttonDisabled]}
             onPress={handleDriveRestore}
-            disabled={isLoading}
+            disabled={!!loadingOp}
           >
-            <Text style={styles.buttonText}>{isLoading ? t.drive.restoring : t.drive.restore}</Text>
+            {loadingOp === 'restore'
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.buttonText}>{t.drive.restore}</Text>}
           </Pressable>
           {driveStatus && (
             <View style={[styles.statusBox, driveStatus.startsWith('Error') && styles.statusBoxError]}>

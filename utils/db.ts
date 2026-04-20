@@ -15,6 +15,9 @@ declare global {
   }
 }
 
+/** No-op en Electron: el proceso principal maneja la conexión. */
+export async function reloadDatabase(): Promise<void> {}
+
 export const db = {
   getAllAsync: <T>(sql: string, ...params: unknown[]): Promise<T[]> =>
     window.electronDB.getAllAsync(sql, params) as Promise<T[]>,

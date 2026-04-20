@@ -21,6 +21,7 @@ const translations = {
   es: {
     tabs: {
       contacts: 'Contactos',
+      calendar: 'Cumpleaños',
       config: 'Configuración',
     },
     common: {
@@ -165,6 +166,29 @@ const translations = {
       deleteConfirm: (num: string) => `¿Eliminar cuenta ${num}?`,
       saveError: 'No se pudo guardar la cuenta.',
     },
+    notes: {
+      title: 'Notas',
+      empty: 'Sin notas',
+      addTitle: 'Agregar nota',
+      noteLabel: 'Nota',
+      placeholder: 'Escribe una nota...',
+      required: 'La nota no puede estar vacía.',
+      deleteTitle: 'Eliminar nota',
+      deleteConfirm: '¿Eliminar esta nota?',
+    },
+    urls: {
+      title: 'Sitios web',
+      empty: 'Sin URLs registradas',
+      addTitle: 'Agregar URL',
+      urlLabel: 'URL',
+      urlPlaceholder: 'https://ejemplo.com',
+      labelField: 'Etiqueta',
+      labelPlaceholder: 'Ej: LinkedIn, Instagram',
+      required: 'La URL es obligatoria.',
+      openError: 'No se pudo abrir el enlace.',
+      deleteTitle: 'Eliminar URL',
+      deleteConfirm: (url: string) => `¿Eliminar ${url}?`,
+    },
     zodiac: {
       aries:       { name: 'Aries',       description: 'Valiente, impulsivo y apasionado' },
       taurus:      { name: 'Tauro',       description: 'Paciente, confiable y persistente' },
@@ -232,6 +256,7 @@ const translations = {
   en: {
     tabs: {
       contacts: 'Contacts',
+      calendar: 'Birthdays',
       config: 'Settings',
     },
     common: {
@@ -375,6 +400,29 @@ const translations = {
       deleteTitle: 'Delete account',
       deleteConfirm: (num: string) => `Delete account ${num}?`,
       saveError: 'Could not save account.',
+    },
+    notes: {
+      title: 'Notes',
+      empty: 'No notes',
+      addTitle: 'Add note',
+      noteLabel: 'Note',
+      placeholder: 'Write a note...',
+      required: 'Note cannot be empty.',
+      deleteTitle: 'Delete note',
+      deleteConfirm: 'Delete this note?',
+    },
+    urls: {
+      title: 'Websites',
+      empty: 'No URLs registered',
+      addTitle: 'Add URL',
+      urlLabel: 'URL',
+      urlPlaceholder: 'https://example.com',
+      labelField: 'Label',
+      labelPlaceholder: 'E.g. LinkedIn, Instagram',
+      required: 'URL is required.',
+      openError: 'Could not open the link.',
+      deleteTitle: 'Delete URL',
+      deleteConfirm: (url: string) => `Delete ${url}?`,
     },
     zodiac: {
       aries:       { name: 'Aries',       description: 'Bold, impulsive and passionate' },
