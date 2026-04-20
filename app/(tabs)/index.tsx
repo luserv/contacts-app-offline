@@ -16,7 +16,7 @@ import AdBanner from '../../components/AdBanner';
 import Dropdown from '../../components/Dropdown';
 import { MaritalStatus, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
-import { edadEnFecha, getZodiacSymbol } from '../../utils/contactUtils';
+import { displayName, edadEnFecha, getZodiacSymbol } from '../../utils/contactUtils';
 import { rescheduleExpiredBirthdayNotifications } from '../../utils/notifications';
 
 const DOC_TYPES = ['Pasaporte', 'Cédula', 'Licencia de conducir', 'Otro'];
@@ -72,7 +72,38 @@ function formatFullAge(birthdate?: string | null): string | null {
   return parts2.length > 0 ? parts2.join(', ') : '0 días';
 }
 
-// Convierte DD/MM/AAAA a número AAAAMMDD para comparación exacta sin timezone
+type SearchFilter =
+  | { type: 'age'; op: 'eq' | 'gt' | 'lt' | 'gte' | 'lte'; value: number }
+  | { type: 'text'; value: string };
+
+function parseSearchFilter(query: string): SearchFilter {
+  const trimmed = query.trim();
+  // age:23  age:>23  age:<23  age:>=23  age:<=23
+  const m = trimmed.match(/^age:(>=|<=|>|<)?(\d+)$/i);
+  if (m) {
+    const opStr = m[1] ?? '';
+    const value = parseInt(m[2]);
+    const op = opStr === '>=' ? 'gte' : opStr === '<=' ? 'lte' : opStr === '>' ? 'gt' : opStr === '<' ? 'lt' : 'eq';
+    return { type: 'age', op, value };
+  }
+  return { type: 'text', value: trimmed };
+}
+
+type AgeOp = Extract<SearchFilter, { type: 'age' }>['op'];
+
+function applyAgeFilter(contacts: Contact[], op: AgeOp, value: number): Contact[] {
+  return contacts.filter(c => {
+    const age = parseBirthdateToAge(c.birthdate);
+    if (age === null) return false;
+    if (op === 'eq')  return age === value;
+    if (op === 'gt')  return age > value;
+    if (op === 'lt')  return age < value;
+    if (op === 'gte') return age >= value;
+    if (op === 'lte') return age <= value;
+    return false;
+  });
+}
+
 function birthdateToSortKey(birthdate?: string | null): number | null {
   if (!birthdate) return null;
   const parts = birthdate.split('/');
@@ -91,8 +122,6 @@ function sortContacts(list: Contact[], key: SortKey): Contact[] {
     if (kA === null && kB === null) return 0;
     if (kA === null) return 1;
     if (kB === null) return -1;
-    // age_desc = mayor→menor = fecha más antigua primero = kA - kB (ascendente por fecha)
-    // age_asc  = menor→mayor = fecha más reciente primero = kB - kA (descendente por fecha)
     return key === 'age_desc' ? kA - kB : kB - kA;
   });
 }
@@ -112,7 +141,6 @@ export default function HomeScreen() {
   const [selectedStatusId, setSelectedStatusId] = useState<string | null>(null);
   const [maritalStatuses, setMaritalStatuses] = useState<MaritalStatus[]>([]);
 
-  // Documento de identidad
   const [hasDoc, setHasDoc] = useState(false);
   const [docType, setDocType] = useState(DOC_TYPES[0]);
   const [cardNumber, setCardNumber] = useState('');
@@ -122,32 +150,52 @@ export default function HomeScreen() {
   const { t } = useI18n();
 
   const [searchResults, setSearchResults] = React.useState<Contact[]>([]);
-  const [searchRefreshKey, setSearchRefreshKey] = React.useState(0);
 
   React.useEffect(() => {
     fetchContacts().then(loaded => {
-      // Android: DATE triggers son de una sola vez — reprogramar las que ya dispararon
       rescheduleExpiredBirthdayNotifications(loaded);
     });
   }, [fetchContacts]);
 
+  const chips = React.useMemo(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return [];
+    return trimmed.split('&').map(p => p.trim()).filter(Boolean).map(part => {
+      const f = parseSearchFilter(part);
+      if (f.type === 'age') {
+        const opLabel = f.op === 'eq' ? '' : f.op === 'gt' ? '>' : f.op === 'lt' ? '<' : f.op === 'gte' ? '≥' : '≤';
+        return `Edad ${opLabel}${opLabel ? ' ' : ''}${f.value}`;
+      }
+      return part;
+    });
+  }, [searchQuery]);
+
   React.useEffect(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed) { setSearchResults([]); return; }
-    const timer = setTimeout(() => {
-      searchContacts(trimmed).then(setSearchResults);
+
+    const parts = trimmed.split('&').map(p => p.trim()).filter(Boolean);
+    const timer = setTimeout(async () => {
+      const resultSets: Contact[][] = await Promise.all(
+        parts.map(part => {
+          const f = parseSearchFilter(part);
+          if (f.type === 'age') return Promise.resolve(applyAgeFilter(contacts, f.op, f.value));
+          return searchContacts(part);
+        })
+      );
+      if (resultSets.length === 0) { setSearchResults([]); return; }
+      const idSets = resultSets.map(r => new Set(r.map((c: Contact) => c.contact_id)));
+      setSearchResults(resultSets[0].filter((c: Contact) => idSets.every(s => s.has(c.contact_id))));
     }, 150);
     return () => clearTimeout(timer);
-  }, [searchQuery, searchContacts, searchRefreshKey]);
+  }, [searchQuery, searchContacts, contacts]);
 
   const handleRefresh = React.useCallback(async () => {
     await fetchContacts();
-    setSearchRefreshKey(k => k + 1);
   }, [fetchContacts]);
 
   useFocusEffect(useCallback(() => {
     fetchContacts();
-    setSearchRefreshKey(k => k + 1);
     setModalVisible(false);
     setSortModalVisible(false);
   }, []));
@@ -232,10 +280,11 @@ export default function HomeScreen() {
         <Search size={20} color="#8E8E93" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder={t.contacts.search}
+          placeholder={`${t.contacts.search}  (age:23)`}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#8E8E93"
+          autoCapitalize="none"
         />
         {searchQuery.length > 0 && (
           <Pressable onPress={() => setSearchQuery('')}>
@@ -243,6 +292,22 @@ export default function HomeScreen() {
           </Pressable>
         )}
       </View>
+
+      {chips.length > 0 && (
+        <View style={styles.activeFilterRow}>
+          {chips.map((chip, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <Text style={styles.chipAnd}>&amp;</Text>}
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>{chip}</Text>
+              </View>
+            </React.Fragment>
+          ))}
+          <Pressable onPress={() => setSearchQuery('')} hitSlop={8} style={styles.chipClear}>
+            <X size={14} color="#FF3B30" />
+          </Pressable>
+        </View>
+      )}
 
       <View style={styles.filterRow}>
         {([null, 'MALE', 'FEMALE'] as const).map(g => (
@@ -282,9 +347,7 @@ export default function HomeScreen() {
                 )}
               </View>
               <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>
-                  {[item.first_name, item.middle_name, item.surname].filter(Boolean).join(' ')}
-                </Text>
+                <Text style={styles.contactName}>{displayName(item)}</Text>
                 {(sortKey === 'age_asc' || sortKey === 'age_desc') && (
                   <Text style={styles.contactAge}>
                     {formatFullAge(item.birthdate) ?? 'Edad no registrada'}
@@ -484,10 +547,22 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#E5E5EA', borderRadius: 10,
-    paddingHorizontal: 12, marginHorizontal: 16, marginVertical: 10, height: 44,
+    paddingHorizontal: 2, marginHorizontal: 16, marginVertical: 10, height: 44,
   },
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 16, color: '#000' },
+
+  activeFilterRow: {
+    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center',
+    paddingHorizontal: 16, marginBottom: 4, marginTop: -4, gap: 6,
+  },
+  activeFilterChip: {
+    backgroundColor: '#E5F0FF', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5,
+    borderWidth: 1, borderColor: '#007AFF40',
+  },
+  activeFilterText: { fontSize: 13, color: '#007AFF', fontWeight: '600' },
+  chipAnd: { fontSize: 12, color: '#8E8E93', fontWeight: '700' },
+  chipClear: { padding: 2 },
 
   filterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
   filterChip: {

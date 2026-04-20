@@ -6,17 +6,26 @@
 import * as SQLite from 'expo-sqlite';
 import { initializeDatabase } from './dbInit';
 
-const _db = SQLite.openDatabaseSync('contacts.db');
+let _db = SQLite.openDatabaseSync('contacts.db');
 
-// Inicialización síncrona al cargar el módulo
-(async () => {
-  await initializeDatabase({
-    execAsync: (sql) => { _db.execSync(sql); return Promise.resolve(); },
-    runAsync: (sql, ...p) => { _db.runSync(sql, p); return Promise.resolve(); },
+function makeAdapter() {
+  return {
+    execAsync: (sql: string) => { _db.execSync(sql); return Promise.resolve(); },
+    runAsync: (sql: string, ...p: unknown[]) => { _db.runSync(sql, p as any); return Promise.resolve(); },
     getAllAsync: () => Promise.resolve([]),
     getFirstAsync: () => Promise.resolve(null),
-  });
-})();
+  };
+}
+
+// Inicialización síncrona al cargar el módulo
+(async () => { await initializeDatabase(makeAdapter()); })();
+
+/** Cierra la conexión actual y la reabre (necesario tras reemplazar el archivo en disco). */
+export async function reloadDatabase(): Promise<void> {
+  try { _db.closeSync(); } catch (_) {}
+  _db = SQLite.openDatabaseSync('contacts.db');
+  await initializeDatabase(makeAdapter());
+}
 
 export const db = {
   getAllAsync: <T>(sql: string, ...params: unknown[]): Promise<T[]> =>

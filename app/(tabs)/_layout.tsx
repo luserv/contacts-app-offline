@@ -12,6 +12,11 @@ export default function TabsLayout() {
         tabBarLabel: t.tabs.contacts,
         tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
       }} />
+      <Tabs.Screen name="calendar" options={{
+        headerTitle: t.tabs.calendar,
+        tabBarLabel: t.tabs.calendar,
+        tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
+      }} />
       <Tabs.Screen name="config" options={{
         headerTitle: t.tabs.config,
         tabBarLabel: t.tabs.config,
