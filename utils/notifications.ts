@@ -1,4 +1,9 @@
 import { Platform } from 'react-native';
+import {
+    BirthdayNotificationSettings,
+    buildNotificationBody,
+    loadNotificationSettings,
+} from './notificationSettings';
 
 const isWeb = Platform.OS === 'web';
 
@@ -23,8 +28,8 @@ async function checkAndShowBirthdayNotifications() {
         await electronNotif.checkBirthdays();
     for (const c of contacts) {
         showWebNotification(
-            '🎂 Cumpleaños mañana',
-            `${c.first_name} ${c.surname} cumple años mañana.`
+            '🎂 Birthday tomorrow',
+            `${c.first_name} ${c.surname} has a birthday tomorrow.`
         );
     }
 }
@@ -40,6 +45,8 @@ if (!isWeb) {
         N.setNotificationHandler({
             handleNotification: async () => ({
                 shouldShowAlert: true,
+                shouldShowBanner: true,
+                shouldShowList: true,
                 shouldPlaySound: true,
                 shouldSetBadge: false,
             }),
@@ -59,7 +66,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     try {
         if (Platform.OS === 'android') {
             await N.setNotificationChannelAsync('birthdays', {
-                name: 'Cumpleaños',
+                name: 'Birthdays',
                 importance: N.AndroidImportance.HIGH,
                 vibrationPattern: [0, 250, 250, 250],
             });
@@ -82,20 +89,25 @@ function parseBirthdate(birthdate: string): { day: number; month: number } | nul
     return { day, month };
 }
 
-function getDayBefore(day: number, month: number): { day: number; month: number } {
-    if (day > 1) return { day: day - 1, month };
-    const prevMonth = month === 1 ? 12 : month - 1;
-    const lastDay = new Date(2024, prevMonth, 0).getDate();
-    return { day: lastDay, month: prevMonth };
+/**
+ * Devuelve la fecha (día/mes) desplazada `daysBefore` días hacia atrás
+ * a partir de un (day, month). Maneja wraparound de mes/año usando
+ * un año no bisiesto (2025) como referencia para evitar el 29-feb.
+ */
+function getDayShifted(day: number, month: number, daysBefore: number): { day: number; month: number } {
+    if (daysBefore <= 0) return { day, month };
+    const ref = new Date(2025, month - 1, day);
+    ref.setDate(ref.getDate() - daysBefore);
+    return { day: ref.getDate(), month: ref.getMonth() + 1 };
 }
 
 /** Próxima fecha de notificación (este año si no pasó, el siguiente si ya pasó). */
-function getNextNotificationDate(day: number, month: number, hour = 9): Date {
+function getNextNotificationDate(day: number, month: number, hour: number, minute: number): Date {
     const now = new Date();
     const year = now.getFullYear();
-    const candidate = new Date(year, month - 1, day, hour, 0, 0, 0);
+    const candidate = new Date(year, month - 1, day, hour, minute, 0, 0);
     if (candidate > now) return candidate;
-    return new Date(year + 1, month - 1, day, hour, 0, 0, 0);
+    return new Date(year + 1, month - 1, day, hour, minute, 0, 0);
 }
 
 interface ContactForNotification {
@@ -105,37 +117,51 @@ interface ContactForNotification {
     birthdate?: string | null;
 }
 
-/** Datos que se guardan en content.data para comparar sin parsear el trigger. */
+/** Datos guardados en content.data para detectar cambios sin parsear el trigger. */
 interface NotifData {
     notifyDay: number;
     notifyMonth: number;
     name: string;
+    daysBefore: number;
+    hour: number;
+    minute: number;
+    template?: string;
 }
+
+const DEFAULT_BODY_DEFAULTS = {
+    sameDay: '🎂 {name} has a birthday today.',
+    oneDay: '🎂 {name} has a birthday tomorrow.',
+    nDays: (n: number) => `🎂 {name} has a birthday in ${n} days.`,
+};
+
+const NOTIFICATION_TITLE = '🎂 Birthday';
 
 // ─── Sync inteligente ─────────────────────────────────────────────────────────
 
 /**
- * Sincroniza las notificaciones de cumpleaños con el estado actual de contactos.
- * Solo cancela/crea las que realmente cambiaron:
- *   - Nuevo contacto con fecha → crea
- *   - Fecha de cumpleaños cambió → cancela + crea
- *   - Nombre cambió → cancela + crea
- *   - Contacto eliminado o sin fecha → cancela
- *   - Sin cambios → no toca nada
+ * Sincroniza las notificaciones de cumpleaños con el estado actual de contactos
+ * y la configuración pasada. Solo cancela/crea las que realmente cambiaron.
  */
-async function syncBirthdayNotifications(contacts: ContactForNotification[]): Promise<number> {
+async function syncBirthdayNotifications(
+    contacts: ContactForNotification[],
+    settings: BirthdayNotificationSettings,
+): Promise<number> {
     if (!N) return 0;
 
-    // Mapa de notificaciones actualmente programadas: id → data almacenada
+    // Si está deshabilitado, cancelar todo y salir
+    if (!settings.enabled) {
+        await cancelAllBirthdayNotifications();
+        return 0;
+    }
+
     const scheduled = await N.getAllScheduledNotificationsAsync();
     const scheduledMap = new Map<string, NotifData | null>();
     for (const n of scheduled) {
         if (!n.identifier.startsWith('birthday_')) continue;
-        const data = n.content.data as NotifData | null;
+        const data = n.content.data as unknown as NotifData | null;
         scheduledMap.set(n.identifier, data ?? null);
     }
 
-    // IDs que deberían existir al final
     const expectedIds = new Set<string>();
     let count = 0;
 
@@ -144,39 +170,49 @@ async function syncBirthdayNotifications(contacts: ContactForNotification[]): Pr
         const parsed = parseBirthdate(contact.birthdate);
         if (!parsed) continue;
 
-        const { day: notifyDay, month: notifyMonth } = getDayBefore(parsed.day, parsed.month);
+        const { day: notifyDay, month: notifyMonth } = getDayShifted(parsed.day, parsed.month, settings.daysBefore);
         const id = `birthday_${contact.contact_id}`;
         const expectedName = `${contact.first_name} ${contact.surname}`;
+        const body = buildNotificationBody(settings.messageTemplate, expectedName, settings.daysBefore, DEFAULT_BODY_DEFAULTS);
         expectedIds.add(id);
 
         const existing = scheduledMap.get(id);
 
         if (existing !== undefined) {
-            // Ya existe — verificar si el contenido coincide
             const upToDate =
                 existing !== null &&
                 existing.notifyDay === notifyDay &&
                 existing.notifyMonth === notifyMonth &&
-                existing.name === expectedName;
+                existing.name === expectedName &&
+                existing.daysBefore === settings.daysBefore &&
+                existing.hour === settings.hour &&
+                existing.minute === settings.minute &&
+                (existing.template ?? undefined) === (settings.messageTemplate ?? undefined);
 
             if (upToDate) {
                 count++;
-                continue; // Sin cambios, no tocar
+                continue;
             }
 
-            // Cambió fecha o nombre → cancelar para reprogramar
             await N.cancelScheduledNotificationAsync(id);
         }
 
-        // Programar (nueva o actualizada)
         try {
             await N.scheduleNotificationAsync({
                 identifier: id,
                 content: {
-                    title: '🎂 Cumpleaños mañana',
-                    body: `${expectedName} cumple años mañana.`,
+                    title: NOTIFICATION_TITLE,
+                    body,
                     sound: true,
-                    data: { notifyDay, notifyMonth, name: expectedName } satisfies NotifData,
+                    data: {
+                        notifyDay,
+                        notifyMonth,
+                        name: expectedName,
+                        daysBefore: settings.daysBefore,
+                        hour: settings.hour,
+                        minute: settings.minute,
+                        template: settings.messageTemplate,
+                    } satisfies NotifData,
                 },
                 trigger: Platform.OS === 'ios'
                     ? {
@@ -184,12 +220,12 @@ async function syncBirthdayNotifications(contacts: ContactForNotification[]): Pr
                         repeats: true,
                         month: notifyMonth,
                         day: notifyDay,
-                        hour: 9,
-                        minute: 0,
+                        hour: settings.hour,
+                        minute: settings.minute,
                     }
                     : {
                         type: N.SchedulableTriggerInputTypes.DATE,
-                        date: getNextNotificationDate(notifyDay, notifyMonth),
+                        date: getNextNotificationDate(notifyDay, notifyMonth, settings.hour, settings.minute),
                     },
             });
             count++;
@@ -198,7 +234,6 @@ async function syncBirthdayNotifications(contacts: ContactForNotification[]): Pr
         }
     }
 
-    // Cancelar notificaciones de contactos que ya no tienen fecha o fueron eliminados
     for (const [id] of scheduledMap) {
         if (!expectedIds.has(id)) {
             await N.cancelScheduledNotificationAsync(id);
@@ -210,9 +245,15 @@ async function syncBirthdayNotifications(contacts: ContactForNotification[]): Pr
 
 // ─── API pública ──────────────────────────────────────────────────────────────
 
-/** Llamado desde config.tsx al pulsar "Programar notificaciones". */
-export async function scheduleAllBirthdayNotifications(contacts: ContactForNotification[]): Promise<number> {
+/** Llamado desde la pantalla de notificaciones al pulsar "Programar". */
+export async function scheduleAllBirthdayNotifications(
+    contacts: ContactForNotification[],
+    settingsOverride?: BirthdayNotificationSettings,
+): Promise<number> {
+    const settings = settingsOverride ?? await loadNotificationSettings();
+
     if (isWeb) {
+        if (!settings.enabled) return 0;
         const granted = await webRequestPermission();
         if (!granted) return 0;
         await checkAndShowBirthdayNotifications();
@@ -220,17 +261,21 @@ export async function scheduleAllBirthdayNotifications(contacts: ContactForNotif
     }
     if (!N) return 0;
     try {
-        return await syncBirthdayNotifications(contacts);
+        return await syncBirthdayNotifications(contacts, settings);
     } catch (_) {
         return 0;
     }
 }
 
 /** Llamado al arrancar la app (index.tsx) para reprogramar expiradas y limpiar obsoletas. */
-export async function rescheduleExpiredBirthdayNotifications(contacts: ContactForNotification[]): Promise<void> {
+export async function rescheduleExpiredBirthdayNotifications(
+    contacts: ContactForNotification[],
+    settingsOverride?: BirthdayNotificationSettings,
+): Promise<void> {
     if (isWeb || !N) return;
     try {
-        await syncBirthdayNotifications(contacts);
+        const settings = settingsOverride ?? await loadNotificationSettings();
+        await syncBirthdayNotifications(contacts, settings);
     } catch (_) {}
 }
 
@@ -239,6 +284,23 @@ export async function cancelBirthdayNotification(contactId: string): Promise<voi
     try {
         await N.cancelScheduledNotificationAsync(`birthday_${contactId}`);
     } catch (_) {}
+}
+
+export async function cancelAllBirthdayNotifications(): Promise<number> {
+    if (isWeb || !N) return 0;
+    try {
+        const scheduled = await N.getAllScheduledNotificationsAsync();
+        let cancelled = 0;
+        for (const n of scheduled) {
+            if (n.identifier.startsWith('birthday_')) {
+                await N.cancelScheduledNotificationAsync(n.identifier);
+                cancelled++;
+            }
+        }
+        return cancelled;
+    } catch (_) {
+        return 0;
+    }
 }
 
 export async function getScheduledBirthdayCount(): Promise<number> {

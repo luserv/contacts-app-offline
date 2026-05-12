@@ -1,5 +1,5 @@
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import { ArrowDownUp, Plus, RefreshCw, Search, X } from 'lucide-react-native';
+import { ArrowDownUp, Filter, Plus, RefreshCw, Search, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   FlatList,
@@ -14,124 +14,52 @@ import {
 } from 'react-native';
 import AdBanner from '../../components/AdBanner';
 import Dropdown from '../../components/Dropdown';
+import {
+  applyAgeFilter,
+  CedulaFilter,
+  ContactListItem,
+  DOC_TYPES,
+  filterContactsByCedula,
+  filterContactsByGender,
+  filterContactsByMaritalStatus,
+  filterContactsByOrganization,
+  formatFullAge,
+  GenderFilter,
+  getGenderFilterOptions,
+  getSearchChips,
+  MaritalStatusFilter,
+  OrganizationFilter,
+  parseSearchFilter,
+  sortContacts,
+  SortKey,
+  SORT_OPTIONS,
+} from '../../utils/contactList';
+import { getContactIdsWithCedula } from '../../utils/cedulaFilter';
+import {
+  getAllOrganizations,
+  getContactIdsByOrganization,
+  getContactIdsWithOrganization,
+} from '../../utils/organizationFilter';
 import { MaritalStatus, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
-import { displayName, edadEnFecha, getZodiacSymbol } from '../../utils/contactUtils';
+import { edadEnFecha } from '../../utils/contactUtils';
 import { rescheduleExpiredBirthdayNotifications } from '../../utils/notifications';
-
-const DOC_TYPES = ['Pasaporte', 'Cédula', 'Licencia de conducir', 'Otro'];
-
-interface Contact {
-  contact_id: string;
-  [key: string]: any;
-}
-
-type SortKey = 'first_name' | 'surname' | 'age_asc' | 'age_desc';
-
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'first_name', label: 'Nombre (A-Z)' },
-  { key: 'surname',    label: 'Apellido (A-Z)' },
-  { key: 'age_desc',   label: 'Edad (mayor → menor)' },
-  { key: 'age_asc',    label: 'Edad (menor → mayor)' },
-];
-
-function parseBirthdateToAge(birthdate?: string | null): number | null {
-  if (!birthdate) return null;
-  const parts = birthdate.split('/');
-  if (parts.length !== 3) return null;
-  const [d, m, y] = parts.map(Number);
-  if (!d || !m || !y) return null;
-  const today = new Date();
-  let age = today.getFullYear() - y;
-  if (today.getMonth() + 1 < m || (today.getMonth() + 1 === m && today.getDate() < d)) age--;
-  return age;
-}
-
-function formatFullAge(birthdate?: string | null): string | null {
-  if (!birthdate) return null;
-  const parts = birthdate.split('/');
-  if (parts.length !== 3) return null;
-  const [d, m, y] = parts.map(Number);
-  if (!d || !m || !y) return null;
-  const today = new Date();
-  let years = today.getFullYear() - y;
-  let months = today.getMonth() + 1 - m;
-  let days = today.getDate() - d;
-  if (days < 0) {
-    months--;
-    days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
-  }
-  if (months < 0) {
-    years--;
-    months += 12;
-  }
-  const parts2: string[] = [];
-  if (years > 0) parts2.push(`${years} ${years === 1 ? 'año' : 'años'}`);
-  if (months > 0) parts2.push(`${months} ${months === 1 ? 'mes' : 'meses'}`);
-  if (days > 0) parts2.push(`${days} ${days === 1 ? 'día' : 'días'}`);
-  return parts2.length > 0 ? parts2.join(', ') : '0 días';
-}
-
-type SearchFilter =
-  | { type: 'age'; op: 'eq' | 'gt' | 'lt' | 'gte' | 'lte'; value: number }
-  | { type: 'text'; value: string };
-
-function parseSearchFilter(query: string): SearchFilter {
-  const trimmed = query.trim();
-  // age:23  age:>23  age:<23  age:>=23  age:<=23
-  const m = trimmed.match(/^age:(>=|<=|>|<)?(\d+)$/i);
-  if (m) {
-    const opStr = m[1] ?? '';
-    const value = parseInt(m[2]);
-    const op = opStr === '>=' ? 'gte' : opStr === '<=' ? 'lte' : opStr === '>' ? 'gt' : opStr === '<' ? 'lt' : 'eq';
-    return { type: 'age', op, value };
-  }
-  return { type: 'text', value: trimmed };
-}
-
-type AgeOp = Extract<SearchFilter, { type: 'age' }>['op'];
-
-function applyAgeFilter(contacts: Contact[], op: AgeOp, value: number): Contact[] {
-  return contacts.filter(c => {
-    const age = parseBirthdateToAge(c.birthdate);
-    if (age === null) return false;
-    if (op === 'eq')  return age === value;
-    if (op === 'gt')  return age > value;
-    if (op === 'lt')  return age < value;
-    if (op === 'gte') return age >= value;
-    if (op === 'lte') return age <= value;
-    return false;
-  });
-}
-
-function birthdateToSortKey(birthdate?: string | null): number | null {
-  if (!birthdate) return null;
-  const parts = birthdate.split('/');
-  if (parts.length !== 3) return null;
-  const [d, m, y] = parts.map(Number);
-  if (!d || !m || !y) return null;
-  return y * 10000 + m * 100 + d;
-}
-
-function sortContacts(list: Contact[], key: SortKey): Contact[] {
-  return [...list].sort((a, b) => {
-    if (key === 'first_name') return a.first_name.localeCompare(b.first_name);
-    if (key === 'surname')    return a.surname.localeCompare(b.surname);
-    const kA = birthdateToSortKey(a.birthdate);
-    const kB = birthdateToSortKey(b.birthdate);
-    if (kA === null && kB === null) return 0;
-    if (kA === null) return 1;
-    if (kB === null) return -1;
-    return key === 'age_desc' ? kA - kB : kB - kA;
-  });
-}
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('first_name');
   const [sortModalVisible, setSortModalVisible] = useState(false);
-  const [genderFilter, setGenderFilter] = useState<'MALE' | 'FEMALE' | null>(null);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>(null);
+  const [birthdateFilter, setBirthdateFilter] = useState<'all' | 'with' | 'without'>('all');
+  const [cedulaFilter, setCedulaFilter] = useState<CedulaFilter>({ mode: 'all' });
+  const [cedulaIds, setCedulaIds] = useState<Set<string>>(new Set());
+  const [organizationFilter, setOrganizationFilter] = useState<OrganizationFilter>({ mode: 'all' });
+  const [orgIds, setOrgIds] = useState<Set<string>>(new Set());
+  const [specificOrgIds, setSpecificOrgIds] = useState<Set<string>>(new Set());
+  const [organizations, setOrganizations] = useState<{ organization_id: string; name: string }[]>([]);
+  const [maritalStatusFilter, setMaritalStatusFilter] = useState<MaritalStatusFilter>({ mode: 'all' });
 
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -149,7 +77,8 @@ export default function HomeScreen() {
   const { contacts, fetchContacts, createContact, getMaritalStatuses, addIdentityCard, searchContacts } = useContacts();
   const { t } = useI18n();
 
-  const [searchResults, setSearchResults] = React.useState<Contact[]>([]);
+  const [searchResults, setSearchResults] = React.useState<ContactListItem[]>([]);
+  const genderFilterOptions = React.useMemo(() => getGenderFilterOptions(t), [t]);
 
   React.useEffect(() => {
     fetchContacts().then(loaded => {
@@ -157,17 +86,45 @@ export default function HomeScreen() {
     });
   }, [fetchContacts]);
 
+  const refreshCedulaIds = React.useCallback(async () => {
+    const ids = await getContactIdsWithCedula();
+    setCedulaIds(ids);
+  }, []);
+
+  const refreshOrganizationData = React.useCallback(async () => {
+    const [ids, orgs] = await Promise.all([
+      getContactIdsWithOrganization(),
+      getAllOrganizations(),
+    ]);
+    setOrgIds(ids);
+    setOrganizations(orgs);
+  }, []);
+
+  React.useEffect(() => {
+    getMaritalStatuses().then(setMaritalStatuses);
+  }, [getMaritalStatuses]);
+
+  React.useEffect(() => {
+    refreshCedulaIds();
+    refreshOrganizationData();
+  }, [refreshCedulaIds, refreshOrganizationData, contacts]);
+
+  React.useEffect(() => {
+    if (organizationFilter.mode !== 'specific' || !organizationFilter.organizationId) {
+      setSpecificOrgIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    getContactIdsByOrganization(organizationFilter.organizationId).then(ids => {
+      if (!cancelled) setSpecificOrgIds(ids);
+    });
+    return () => { cancelled = true; };
+  }, [organizationFilter, contacts]);
+
   const chips = React.useMemo(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return [];
-    return trimmed.split('&').map(p => p.trim()).filter(Boolean).map(part => {
-      const f = parseSearchFilter(part);
-      if (f.type === 'age') {
-        const opLabel = f.op === 'eq' ? '' : f.op === 'gt' ? '>' : f.op === 'lt' ? '<' : f.op === 'gte' ? '≥' : '≤';
-        return `Edad ${opLabel}${opLabel ? ' ' : ''}${f.value}`;
-      }
-      return part;
-    });
+    return getSearchChips(searchQuery);
   }, [searchQuery]);
 
   React.useEffect(() => {
@@ -176,7 +133,7 @@ export default function HomeScreen() {
 
     const parts = trimmed.split('&').map(p => p.trim()).filter(Boolean);
     const timer = setTimeout(async () => {
-      const resultSets: Contact[][] = await Promise.all(
+      const resultSets: ContactListItem[][] = await Promise.all(
         parts.map(part => {
           const f = parseSearchFilter(part);
           if (f.type === 'age') return Promise.resolve(applyAgeFilter(contacts, f.op, f.value));
@@ -184,15 +141,17 @@ export default function HomeScreen() {
         })
       );
       if (resultSets.length === 0) { setSearchResults([]); return; }
-      const idSets = resultSets.map(r => new Set(r.map((c: Contact) => c.contact_id)));
-      setSearchResults(resultSets[0].filter((c: Contact) => idSets.every(s => s.has(c.contact_id))));
+      const idSets = resultSets.map(r => new Set(r.map((c: ContactListItem) => c.contact_id)));
+      setSearchResults(resultSets[0].filter((c: ContactListItem) => idSets.every(s => s.has(c.contact_id))));
     }, 150);
     return () => clearTimeout(timer);
   }, [searchQuery, searchContacts, contacts]);
 
   const handleRefresh = React.useCallback(async () => {
     await fetchContacts();
-  }, [fetchContacts]);
+    await refreshCedulaIds();
+    await refreshOrganizationData();
+  }, [fetchContacts, refreshCedulaIds, refreshOrganizationData]);
 
   useFocusEffect(useCallback(() => {
     fetchContacts();
@@ -201,10 +160,17 @@ export default function HomeScreen() {
   }, []));
 
   const baseContacts = searchQuery.trim() ? searchResults : contacts;
-  const filteredContacts = sortContacts(
-    genderFilter ? baseContacts.filter(c => c.gender === genderFilter) : baseContacts,
-    sortKey
-  );
+  const genderFiltered = filterContactsByGender(baseContacts, genderFilter);
+  const birthdateFiltered = birthdateFilter === 'all'
+    ? genderFiltered
+    : genderFiltered.filter(c => {
+      const hasBirthdate = !!(c.birthdate && String(c.birthdate).trim());
+      return birthdateFilter === 'with' ? hasBirthdate : !hasBirthdate;
+    });
+  const cedulaFiltered = filterContactsByCedula(birthdateFiltered, cedulaFilter, cedulaIds);
+  const organizationFiltered = filterContactsByOrganization(cedulaFiltered, organizationFilter, orgIds, specificOrgIds);
+  const maritalFiltered = filterContactsByMaritalStatus(organizationFiltered, maritalStatusFilter);
+  const filteredContacts = sortContacts(maritalFiltered, sortKey);
 
   const formatBirthdate = (text: string) => {
     const digits = text.replace(/\D/g, '').slice(0, 8);
@@ -269,6 +235,9 @@ export default function HomeScreen() {
             <Pressable onPress={handleRefresh}>
               <RefreshCw size={22} color="#007AFF" />
             </Pressable>
+            <Pressable onPress={() => setFilterModalVisible(true)}>
+              <Filter size={22} color="#007AFF" />
+            </Pressable>
             <Pressable onPress={() => setSortModalVisible(true)}>
               <ArrowDownUp size={22} color="#007AFF" />
             </Pressable>
@@ -276,55 +245,44 @@ export default function HomeScreen() {
         ),
       }} />
 
-      <View style={styles.searchContainer}>
-        <Search size={20} color="#8E8E93" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder={`${t.contacts.search}  (age:23)`}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor="#8E8E93"
-          autoCapitalize="none"
-        />
-        {searchQuery.length > 0 && (
-          <Pressable onPress={() => setSearchQuery('')}>
-            <X size={20} color="#8E8E93" />
-          </Pressable>
-        )}
-      </View>
-
-      {chips.length > 0 && (
-        <View style={styles.activeFilterRow}>
-          {chips.map((chip, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <Text style={styles.chipAnd}>&amp;</Text>}
-              <View style={styles.activeFilterChip}>
-                <Text style={styles.activeFilterText}>{chip}</Text>
-              </View>
-            </React.Fragment>
-          ))}
-          <Pressable onPress={() => setSearchQuery('')} hitSlop={8} style={styles.chipClear}>
-            <X size={14} color="#FF3B30" />
-          </Pressable>
+      <View style={styles.filtersPanel}>
+        <View style={styles.searchContainer}>
+          <Search size={20} color="#8E8E93" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={`${t.contacts.search}  (age:23)`}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#8E8E93"
+            autoCapitalize="none"
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')}>
+              <X size={20} color="#8E8E93" />
+            </Pressable>
+          )}
         </View>
-      )}
 
-      <View style={styles.filterRow}>
-        {([null, 'MALE', 'FEMALE'] as const).map(g => (
-          <Pressable
-            key={String(g)}
-            style={[styles.filterChip, genderFilter === g && styles.filterChipActive]}
-            onPress={() => setGenderFilter(g)}
-          >
-            <Text style={[styles.filterChipText, genderFilter === g && styles.filterChipTextActive]}>
-              {g === null ? t.contacts.all : g === 'MALE' ? t.contacts.male : t.contacts.female}
-            </Text>
-          </Pressable>
-        ))}
+        {chips.length > 0 && (
+          <View style={styles.activeFilterRow}>
+            {chips.map((chip, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <Text style={styles.chipAnd}>&amp;</Text>}
+                <View style={styles.activeFilterChip}>
+                  <Text style={styles.activeFilterText}>{chip}</Text>
+                </View>
+              </React.Fragment>
+            ))}
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8} style={styles.chipClear}>
+              <X size={14} color="#FF3B30" />
+            </Pressable>
+          </View>
+        )}
+
       </View>
 
       <Text style={styles.contactCount}>
-        {filteredContacts.length} {filteredContacts.length === 1 ? 'contacto' : 'contactos'}
+        {filteredContacts.length} {filteredContacts.length === 1 ? 'contact' : 'contacts'}
       </Text>
 
       <View style={{ flex: 1 }}>
@@ -336,21 +294,13 @@ export default function HomeScreen() {
               style={styles.contactItem}
               onPress={() => router.push(`/contact/${item.contact_id}`)}
             >
-              <View style={styles.avatar}>
-                {getZodiacSymbol(item.birthdate) ? (
-                  <Text style={styles.avatarZodiac}>{getZodiacSymbol(item.birthdate)}</Text>
-                ) : (
-                  <Text style={styles.avatarText}>
-                    {item.first_name?.[0]?.toUpperCase()}
-                    {item.surname?.[0]?.toUpperCase()}
-                  </Text>
-                )}
-              </View>
               <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>{displayName(item)}</Text>
+                <Text style={styles.contactName}>
+                  {`${item.first_name ?? ''} ${item.middle_name ?? ''} ${item.surname ?? ''}`.replace(/\s+/g, ' ').trim()}
+                </Text>
                 {(sortKey === 'age_asc' || sortKey === 'age_desc') && (
                   <Text style={styles.contactAge}>
-                    {formatFullAge(item.birthdate) ?? 'Edad no registrada'}
+                    {formatFullAge(item.birthdate) ?? 'Age not recorded'}
                   </Text>
                 )}
                 {searchQuery.trim() && (item.achievement || item.organization_name) ? (
@@ -369,9 +319,9 @@ export default function HomeScreen() {
                           const e = edadEnFecha(item.birthdate, item.organization_date);
                           if (!e) return '';
                           const parts = [];
-                          if (e.years > 0) parts.push(`${e.years} ${e.years === 1 ? 'año' : 'años'}`);
-                          if (e.months > 0) parts.push(`${e.months} ${e.months === 1 ? 'mes' : 'meses'}`);
-                          if (e.days > 0) parts.push(`${e.days} ${e.days === 1 ? 'día' : 'días'}`);
+                          if (e.years > 0) parts.push(`${e.years} ${e.years === 1 ? 'year' : 'years'}`);
+                          if (e.months > 0) parts.push(`${e.months} ${e.months === 1 ? 'month' : 'months'}`);
+                          if (e.days > 0) parts.push(`${e.days} ${e.days === 1 ? 'day' : 'days'}`);
                           return parts.length ? ` · ${parts.join(', ')}` : '';
                         })()}
                       </Text>
@@ -405,7 +355,7 @@ export default function HomeScreen() {
       >
         <Pressable style={styles.modalOverlay} onPress={() => setSortModalVisible(false)}>
           <View style={styles.sortModal}>
-            <Text style={styles.sortModalTitle}>Ordenar por</Text>
+            <Text style={styles.sortModalTitle}>Sort by</Text>
             {SORT_OPTIONS.map(opt => (
               <Pressable
                 key={opt.key}
@@ -418,6 +368,145 @@ export default function HomeScreen() {
                 {sortKey === opt.key && <Text style={styles.sortCheck}>✓</Text>}
               </Pressable>
             ))}
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Modal de filtros */}
+      <Modal
+        animationType="fade"
+        transparent
+        visible={filterModalVisible}
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setFilterModalVisible(false)}>
+          <View style={styles.sortModal}>
+            <Text style={styles.sortModalTitle}>Filters</Text>
+
+            <Text style={styles.filterSectionTitle}>{t.contacts.gender}</Text>
+            <View style={styles.filterSectionChips}>
+              {genderFilterOptions.map(option => (
+                <Pressable
+                  key={String(option.value)}
+                  style={[styles.filterChip, genderFilter === option.value && styles.filterChipActive]}
+                  onPress={() => setGenderFilter(option.value)}
+                >
+                  <Text style={[styles.filterChipText, genderFilter === option.value && styles.filterChipTextActive]}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={[styles.filterSectionTitle, { marginTop: 12 }]}>{t.contacts.birthdate}</Text>
+            <View style={styles.filterSectionChips}>
+              {([
+                { key: 'all', label: t.contacts.birthdateAll },
+                { key: 'with', label: t.contacts.birthdateWith },
+                { key: 'without', label: t.contacts.birthdateWithout },
+              ] as const).map(opt => (
+                <Pressable
+                  key={opt.key}
+                  style={[styles.filterChip, birthdateFilter === opt.key && styles.filterChipActive]}
+                  onPress={() => setBirthdateFilter(opt.key)}
+                >
+                  <Text style={[styles.filterChipText, birthdateFilter === opt.key && styles.filterChipTextActive]}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={[styles.filterSectionTitle, { marginTop: 12 }]}>{t.contacts.docFilter}</Text>
+            <View style={styles.filterSectionChips}>
+              {([
+                { key: 'all', label: t.contacts.all },
+                { key: 'with', label: t.contacts.docFilterWith },
+                { key: 'without', label: t.contacts.docFilterWithout },
+              ] as const).map(opt => (
+                <Pressable
+                  key={opt.key}
+                  style={[styles.filterChip, cedulaFilter.mode === opt.key && styles.filterChipActive]}
+                  onPress={() => setCedulaFilter({ mode: opt.key })}
+                >
+                  <Text style={[styles.filterChipText, cedulaFilter.mode === opt.key && styles.filterChipTextActive]}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={[styles.filterSectionTitle, { marginTop: 12 }]}>{t.contacts.orgFilter}</Text>
+            <View style={styles.filterSectionChips}>
+              {([
+                { key: 'all', label: t.contacts.all },
+                { key: 'with', label: t.contacts.orgFilterWith },
+                { key: 'without', label: t.contacts.orgFilterWithout },
+                { key: 'specific', label: t.contacts.orgFilterSpecific },
+              ] as const).map(opt => (
+                <Pressable
+                  key={opt.key}
+                  style={[styles.filterChip, organizationFilter.mode === opt.key && styles.filterChipActive]}
+                  onPress={() => setOrganizationFilter(prev => ({
+                    mode: opt.key,
+                    organizationId: opt.key === 'specific' ? prev.organizationId : undefined,
+                  }))}
+                >
+                  <Text style={[styles.filterChipText, organizationFilter.mode === opt.key && styles.filterChipTextActive]}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {organizationFilter.mode === 'specific' && (
+              <View style={styles.orgPickerWrapper}>
+                <Dropdown
+                  options={organizations.map(o => ({ label: o.name, value: o.organization_id }))}
+                  value={organizationFilter.organizationId ?? null}
+                  onSelect={(val) => setOrganizationFilter({
+                    mode: 'specific',
+                    organizationId: val ?? undefined,
+                  })}
+                  placeholder={t.contacts.orgFilterSelectPlaceholder}
+                />
+              </View>
+            )}
+
+            <Text style={[styles.filterSectionTitle, { marginTop: 12 }]}>{t.contacts.maritalFilter}</Text>
+            <View style={styles.filterSectionChips}>
+              {([
+                { key: 'all', label: t.contacts.all },
+                { key: 'with', label: t.contacts.maritalFilterWith },
+                { key: 'without', label: t.contacts.maritalFilterWithout },
+                { key: 'specific', label: t.contacts.maritalFilterSpecific },
+              ] as const).map(opt => (
+                <Pressable
+                  key={opt.key}
+                  style={[styles.filterChip, maritalStatusFilter.mode === opt.key && styles.filterChipActive]}
+                  onPress={() => setMaritalStatusFilter(prev => ({
+                    mode: opt.key,
+                    statusId: opt.key === 'specific' ? prev.statusId : undefined,
+                  }))}
+                >
+                  <Text style={[styles.filterChipText, maritalStatusFilter.mode === opt.key && styles.filterChipTextActive]}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {maritalStatusFilter.mode === 'specific' && (
+              <View style={styles.orgPickerWrapper}>
+                <Dropdown
+                  options={maritalStatuses.map(s => ({ label: s.marital_status, value: s.status_id }))}
+                  value={maritalStatusFilter.statusId ?? null}
+                  onSelect={(val) => setMaritalStatusFilter({
+                    mode: 'specific',
+                    statusId: val ?? undefined,
+                  })}
+                  placeholder={t.contacts.maritalFilterSelectPlaceholder}
+                />
+              </View>
+            )}
           </View>
         </Pressable>
       </Modal>
@@ -544,17 +633,34 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
 
+  filtersPanel: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E5EA',
+  },
+
   searchContainer: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#E5E5EA', borderRadius: 10,
-    paddingHorizontal: 2, marginHorizontal: 16, marginVertical: 10, height: 44,
+    paddingHorizontal: 12, minHeight: 52,
   },
   searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 16, color: '#000' },
+  searchInput: {
+    flex: 1,
+    fontSize: 18,
+    color: '#000',
+    margin: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    minHeight: 52,
+  },
 
   activeFilterRow: {
     flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center',
-    paddingHorizontal: 16, marginBottom: 4, marginTop: -4, gap: 6,
+    marginTop: 10, gap: 6,
   },
   activeFilterChip: {
     backgroundColor: '#E5F0FF', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5,
@@ -564,7 +670,7 @@ const styles = StyleSheet.create({
   chipAnd: { fontSize: 12, color: '#8E8E93', fontWeight: '700' },
   chipClear: { padding: 2 },
 
-  filterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
+  filterRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
   filterChip: {
     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,
     borderWidth: 1, borderColor: '#C7C7CC', backgroundColor: '#F9F9F9',
@@ -572,7 +678,7 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
   filterChipText: { fontSize: 13, color: '#555' },
   filterChipTextActive: { color: '#fff', fontWeight: '600' },
-  contactCount: { fontSize: 13, color: '#8E8E93', marginHorizontal: 16, marginBottom: 4 },
+  contactCount: { fontSize: 13, color: '#8E8E93', marginHorizontal: 16, marginTop: 8, marginBottom: 4 },
   listContent: { paddingBottom: 100 },
   emptyContainer: { flex: 1, alignItems: 'center', marginTop: 60 },
   emptyText: { fontSize: 16, color: '#8E8E93' },
@@ -583,14 +689,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#ccc',
   },
   contactInfo: { flex: 1, justifyContent: 'center' },
-  avatar: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#007AFF', alignItems: 'center', justifyContent: 'center',
-    marginRight: 12, marginTop: 2,
-  },
-  avatarText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  avatarZodiac: { fontSize: 22 },
   contactName: { fontSize: 17, color: '#000' },
+  contactZodiacDesc: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
   contactAge: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
   contactAchievement: { fontSize: 13, color: '#007AFF', marginTop: 2 },
   contactAchievementOrg: { fontSize: 13, color: '#007AFF', fontWeight: '700' },
@@ -615,6 +715,10 @@ const styles = StyleSheet.create({
   sortOptionText: { fontSize: 16, color: '#000' },
   sortOptionActive: { color: '#007AFF', fontWeight: '600' },
   sortCheck: { color: '#007AFF', fontSize: 16, fontWeight: '600' },
+
+  filterSectionTitle: { fontSize: 12, fontWeight: '700', color: '#8E8E93', marginTop: 6, marginBottom: 8, paddingHorizontal: 12 },
+  filterSectionChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 12, paddingBottom: 6 },
+  orgPickerWrapper: { paddingHorizontal: 12, paddingTop: 4, paddingBottom: 8 },
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

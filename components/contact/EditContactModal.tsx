@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Dropdown from '../Dropdown';
 import { MaritalStatus, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
@@ -16,6 +17,7 @@ interface Props {
 export default function EditContactModal({ visible, contact, onClose, onSaved }: Props) {
   const { t } = useI18n();
   const { getMaritalStatuses, updateContact, getContact } = useContacts();
+  const insets = useSafeAreaInsets();
 
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -65,7 +67,11 @@ export default function EditContactModal({ visible, contact, onClose, onSaved }:
         <View style={s.modalOverlay}>
           <View style={s.modalContainer}>
             <Text style={s.modalTitle}>{t.editContact.title}</Text>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 12 }}
+            >
 
               <Text style={s.fieldLabel}>{t.contacts.firstName} <Text style={s.required}>{t.common.required}</Text></Text>
               <TextInput style={s.input} value={firstName} onChangeText={setFirstName} placeholderTextColor="#C7C7CC" placeholder={t.contacts.firstName} />
@@ -108,7 +114,7 @@ export default function EditContactModal({ visible, contact, onClose, onSaved }:
 
             </ScrollView>
 
-            <View style={s.modalActions}>
+            <View style={[s.modalActions, { paddingBottom: Math.max(insets.bottom, 12) }]}>
               <Pressable style={s.btnCancel} onPress={onClose}>
                 <Text style={s.btnCancelText}>{t.common.cancel}</Text>
               </Pressable>

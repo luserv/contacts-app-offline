@@ -17,6 +17,9 @@
   "extraMetadata": {
     "main": "electron/main.js"
   },
+  "extraResources": [
+    { "from": ".env", "to": ".env" }
+  ],
   "npmRebuild": false,
   "asar": {
     "smartUnpack": true
@@ -40,6 +43,7 @@
   },
   "nsis": {
     "oneClick": false,
-    "allowToChangeInstallationDirectory": true
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": true
   }
 }

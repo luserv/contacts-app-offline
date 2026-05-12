@@ -4,6 +4,7 @@ import { Alert, ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View
 import BottomTabBar from '../../components/BottomTabBar';
 import BankAccountCard from '../../components/contact/BankAccountCard';
 import ContactInfoCard from '../../components/contact/ContactInfoCard';
+import DetailInfoRow from '../../components/contact/DetailInfoRow';
 import KeywordsCard from '../../components/contact/KeywordsCard';
 import DocumentsCard from '../../components/contact/DocumentsCard';
 import EditContactModal from '../../components/contact/EditContactModal';
@@ -16,7 +17,8 @@ import { useI18n } from '../../utils/i18n';
 import { calcularEdad, ContactDetail, displayName, EXCLUDED_FIELDS, formatBirthdate, getZodiacKey, getZodiacSymbol } from '../../utils/contactUtils';
 
 export default function ContactDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id: string | string[] }>();
+  const contactId = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
   const { t, lang } = useI18n();
   const { getContact, getIdentityCards, getRelationships, getContactOrganizations, getContactPhones, getContactEmails, getContactKeywords, getBankAccounts, getContactNotes, getContactUrls, fetchContacts, deleteContact } = useContacts();
@@ -34,43 +36,55 @@ export default function ContactDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editVisible, setEditVisible] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleDelete = () => {
     const doDelete = async () => {
-      const ok = await deleteContact(id);
-      if (ok) router.replace('/');
+      if (!contactId || deleting) return;
+      try {
+        setDeleting(true);
+        const ok = await deleteContact(contactId);
+        if (ok) router.replace('/');
+        else Alert.alert(t.common.error ?? 'Error', t.common.deleteError ?? 'Could not delete contact.');
+      } catch (e) {
+        console.error(e);
+        Alert.alert('Error', e instanceof Error ? e.message : String(e));
+      } finally {
+        setDeleting(false);
+      }
     };
     if (typeof window !== 'undefined' && !(window as any).ReactNativeWebView) {
-      if (confirm(`¿Eliminar a ${contact?.first_name} ${contact?.surname}?`)) doDelete();
+      if (confirm(`Delete ${contact?.first_name} ${contact?.surname}?`)) doDelete();
     } else {
       Alert.alert(
-        'Eliminar contacto',
-        `¿Eliminar a ${contact?.first_name} ${contact?.surname}?`,
-        [{ text: 'Cancelar', style: 'cancel' }, { text: 'Eliminar', style: 'destructive', onPress: doDelete }]
+        'Delete contact',
+        `Delete ${contact?.first_name} ${contact?.surname}?`,
+        [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: doDelete }]
       );
     }
   };
 
   useEffect(() => {
-    if (id) loadAll();
-  }, [id]);
+    if (contactId) loadAll();
+  }, [contactId]);
 
   // Sequential loads to avoid concurrent SQLite statements on the same connection
   const loadAll = async () => {
     try {
-      const data = await getContact(id);
+      if (!contactId) return;
+      const data = await getContact(contactId);
       if (!data) { setError(t.detail.notFound); return; }
       setContact(data as ContactDetail);
       await fetchContacts();
-      setIdentityCards(await getIdentityCards(id));
-      setRelationships(await getRelationships(id));
-      setOrganizations(await getContactOrganizations(id));
-      setPhones(await getContactPhones(id));
-      setEmails(await getContactEmails(id));
-      setKeywords(await getContactKeywords(id));
-      setBankAccounts(await getBankAccounts(id));
-      setNotes(await getContactNotes(id));
-      setContactUrls(await getContactUrls(id));
+      setIdentityCards(await getIdentityCards(contactId));
+      setRelationships(await getRelationships(contactId));
+      setOrganizations(await getContactOrganizations(contactId));
+      setPhones(await getContactPhones(contactId));
+      setEmails(await getContactEmails(contactId));
+      setKeywords(await getContactKeywords(contactId));
+      setBankAccounts(await getBankAccounts(contactId));
+      setNotes(await getContactNotes(contactId));
+      setContactUrls(await getContactUrls(contactId));
     } catch {
       setError(t.detail.loadError);
     } finally {
@@ -94,36 +108,52 @@ export default function ContactDetailScreen() {
   const detailFields = Object.entries(contact).filter(
     ([key, value]) => !EXCLUDED_FIELDS.includes(key) && value !== null && value !== undefined
   );
+  const primaryDetailRows = [
+    {
+      key: 'firstName',
+      label: t.detail.firstNameLabel,
+      value: [contact.first_name, contact.middle_name].filter(Boolean).join(' '),
+    },
+    {
+      key: 'surname',
+      label: t.detail.surnameLabel,
+      value: contact.surname,
+    },
+    contact.birthdate ? {
+      key: 'birthdate',
+      label: t.detail.dobLabel,
+      value: formatBirthdate(contact.birthdate, lang),
+      helperText: calcularEdad(contact.birthdate, t.age),
+    } : null,
+    contact.gender ? {
+      key: 'gender',
+      label: t.detail.genderLabel,
+      value: contact.gender === 'MALE' ? t.contacts.male : t.contacts.female,
+    } : null,
+    contact.status_id ? {
+      key: 'status',
+      label: t.detail.maritalLabel,
+      value: contact.status_id,
+    } : null,
+  ].filter(Boolean) as { key: string; label: string; value: string; helperText?: string | null }[];
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ headerTitle: displayName(contact) }} />
+      <Stack.Screen options={{ headerTitle: `${contact.first_name ?? ''} ${contact.surname ?? ''}`.trim() }} />
 
       <ScrollView contentContainerStyle={styles.content}>
 
-        {/* Avatar */}
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            {getZodiacSymbol(contact.birthdate) ? (
-              <Text style={styles.avatarZodiac}>{getZodiacSymbol(contact.birthdate)}</Text>
-            ) : (
-              <Text style={styles.avatarText}>
-                {contact.first_name?.[0]?.toUpperCase()}
-                {contact.surname?.[0]?.toUpperCase()}
-              </Text>
-            )}
-          </View>
-          <Text style={styles.name}>
-            {displayName(contact)}
-          </Text>
+        {/* Encabezado */}
+        <View style={styles.headerContainer}>
           {(() => {
             const key = getZodiacKey(contact.birthdate);
             if (!key) return null;
             const z = t.zodiac[key];
+            const symbol = getZodiacSymbol(contact.birthdate);
             return (
               <View style={styles.zodiacRow}>
+                {symbol ? <Text style={styles.zodiacSymbol}>{symbol}</Text> : null}
                 <Text style={styles.zodiacName}>{z.name}</Text>
-                <Text style={styles.zodiacDot}>·</Text>
                 <Text style={styles.zodiacDesc}>{z.description}</Text>
               </View>
             );
@@ -144,55 +174,32 @@ export default function ContactDetailScreen() {
             </View>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>{t.detail.nameLabel}</Text>
-            <Text style={styles.value}>
-              {displayName(contact)}
-            </Text>
-          </View>
-
-          {contact.birthdate && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>{t.detail.dobLabel}</Text>
-              <Text style={styles.value}>{formatBirthdate(contact.birthdate, lang)}</Text>
-              {calcularEdad(contact.birthdate, t.age) && (
-                <Text style={styles.edad}>{calcularEdad(contact.birthdate, t.age)}</Text>
-              )}
-            </View>
-          )}
-
-          {contact.gender && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>{t.detail.genderLabel}</Text>
-              <Text style={styles.value}>
-                {contact.gender === 'MALE' ? t.contacts.male : t.contacts.female}
-              </Text>
-            </View>
-          )}
-
-          {contact.status_id && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>{t.detail.maritalLabel}</Text>
-              <Text style={styles.value}>{contact.status_id}</Text>
-            </View>
-          )}
+          {primaryDetailRows.map(row => (
+            <DetailInfoRow
+              key={row.key}
+              label={row.label}
+              value={row.value}
+              helperText={row.helperText}
+            />
+          ))}
 
           {detailFields.filter(([key]) => key !== 'birthdate').map(([key, value]) => (
-            <View key={key} style={styles.infoRow}>
-              <Text style={styles.label}>{key.replace(/_/g, ' ').toUpperCase()}</Text>
-              <Text style={styles.value}>{String(value)}</Text>
-            </View>
+            <DetailInfoRow
+              key={key}
+              label={key.replace(/_/g, ' ').toUpperCase()}
+              value={String(value)}
+            />
           ))}
         </View>
 
-        <ContactInfoCard contactId={id} initialPhones={phones} initialEmails={emails} />
-        <DocumentsCard contactId={id} initialCards={identityCards} />
-        <RelationshipsCard contactId={id} initialRelationships={relationships} onNavigate={cid => router.push(`/contact/${cid}`)} />
-        <OrganizationsCard contactId={id} birthdate={contact.birthdate} initialOrganizations={organizations} />
-        <KeywordsCard contactId={id} initialKeywords={keywords} />
-        <BankAccountCard contactId={id} initialAccounts={bankAccounts} />
-        <UrlsCard contactId={id} initialUrls={contactUrls} />
-        <NotesCard contactId={id} initialNotes={notes} />
+        <ContactInfoCard contactId={contactId} initialPhones={phones} initialEmails={emails} />
+        <DocumentsCard contactId={contactId} initialCards={identityCards} />
+        <RelationshipsCard contactId={contactId} initialRelationships={relationships} onNavigate={cid => router.push(`/contact/${cid}`)} />
+        <OrganizationsCard contactId={contactId} birthdate={contact.birthdate} initialOrganizations={organizations} />
+        <KeywordsCard contactId={contactId} initialKeywords={keywords} />
+        <BankAccountCard contactId={contactId} initialAccounts={bankAccounts} />
+        <UrlsCard contactId={contactId} initialUrls={contactUrls} />
+        <NotesCard contactId={contactId} initialNotes={notes} />
 
       </ScrollView>
 
@@ -212,21 +219,11 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { padding: 20, paddingBottom: 40 },
 
-  avatarContainer: { alignItems: 'center', marginBottom: 24 },
-  avatar: {
-    width: 100, height: 100, borderRadius: 50,
-    backgroundColor: '#007AFF', alignItems: 'center', justifyContent: 'center', marginBottom: 12,
-  },
-  avatarText: { color: '#fff', fontSize: 36, fontWeight: 'bold' },
-  avatarZodiac: { fontSize: 48 },
-  zodiacRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginTop: 4,
-  },
-  zodiacName: { fontSize: 14, fontWeight: '700', color: '#555' },
-  zodiacDot: { fontSize: 14, color: '#C7C7CC' },
-  zodiacDesc: { fontSize: 13, color: '#8E8E93' },
-  name: { fontSize: 26, fontWeight: 'bold', color: '#000' },
+  headerContainer: { alignItems: 'center', marginBottom: 24 },
+  zodiacRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  zodiacSymbol: { fontSize: 20 },
+  zodiacName: { fontSize: 13, fontWeight: '700', color: '#555' },
+  zodiacDesc: { fontSize: 13, color: '#8E8E93', textAlign: 'center', flexShrink: 1 },
 
   card: {
     backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16,
@@ -241,11 +238,6 @@ const styles = StyleSheet.create({
   editButtonText: { color: '#007AFF', fontSize: 14, fontWeight: '600' },
   deleteButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#FF3B30' },
   deleteButtonText: { color: '#FF3B30', fontSize: 14, fontWeight: '600' },
-
-  infoRow: { marginBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee', paddingBottom: 10 },
-  label: { fontSize: 11, color: '#8E8E93', marginBottom: 3 },
-  value: { fontSize: 16, color: '#000' },
-  edad: { fontSize: 13, color: '#007AFF', marginTop: 3 },
 
   errorText: { fontSize: 16, color: '#FF3B30', marginBottom: 10 },
   backLink: { fontSize: 16, color: '#007AFF' },

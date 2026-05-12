@@ -32,7 +32,7 @@ export default function LoginScreen() {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo.data?.idToken;
-      if (!idToken) throw new Error('No se recibió el token de Google.');
+      if (!idToken) throw new Error('Google token not received.');
       const tokens = await GoogleSignin.getTokens();
       const credential = GoogleAuthProvider.credential(idToken, tokens.accessToken);
       await signInWithCredential(auth, credential);
@@ -43,9 +43,9 @@ export default function LoginScreen() {
       } else if (e.code === statusCodes.IN_PROGRESS) {
         // ya hay un sign-in en curso
       } else if (e.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        setError('Google Play Services no disponible.');
+        setError('Google Play Services not available.');
       } else {
-        setError(e.message ?? 'Error al iniciar sesión');
+        setError(e.message ?? 'Error signing in');
       }
     } finally {
       setBusy(false);
@@ -67,18 +67,18 @@ export default function LoginScreen() {
           <Text style={styles.iconText}>👥</Text>
         </View>
         <Text style={styles.title}>Contacts</Text>
-        <Text style={styles.subtitle}>Tu agenda personal, siempre contigo.</Text>
+        <Text style={styles.subtitle}>Your personal agenda, always with you.</Text>
         <Pressable style={[styles.googleBtn, busy && styles.btnDisabled]} onPress={handleSignIn} disabled={busy}>
           {busy
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.googleBtnText}>🔑 Continuar con Google</Text>}
+            : <Text style={styles.googleBtnText}>🔑 Continue with Google</Text>}
         </Pressable>
-        <Text style={styles.googleHint}>Activa el backup automático en Google Drive</Text>
+        <Text style={styles.googleHint}>Enable automatic backup on Google Drive</Text>
         <Pressable style={styles.guestBtn} onPress={handleGuest}>
-          <Text style={styles.guestBtnText}>Continuar sin iniciar sesión</Text>
+          <Text style={styles.guestBtnText}>Continue without signing in</Text>
         </Pressable>
         {error && <Text style={styles.error}>{error}</Text>}
-        <Text style={styles.disclaimer}>Al iniciar sesión aceptas que tus datos de licencia se almacenen de forma segura.</Text>
+        <Text style={styles.disclaimer}>By signing in you agree that your license data will be stored securely.</Text>
       </View>
     </View>
   );

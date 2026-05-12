@@ -16,6 +16,7 @@ import { auth, db_firebase } from './firebase';
 const GUEST_KEY = 'auth_guest_mode';
 const DRIVE_TOKEN_KEY = 'drive_access_token';
 const DRIVE_TOKEN_EXPIRY_KEY = 'drive_token_expiry';
+const ELECTRON_SIGNED_OUT_KEY = 'auth_electron_signed_out';
 /** Margen: 55 min. Los tokens de Google duran 1 h; refrescamos antes de que expiren. */
 const TOKEN_LIFETIME_MS = 55 * 60 * 1000;
 
@@ -74,6 +75,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const buildGoogleOAuthUrl = useCallback((prompt?: 'none') => {
+    const clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
+    const redirectUri = 'http://localhost';
+    const scopes = ['openid', 'email', 'profile', 'https://www.googleapis.com/auth/drive.file'].join(' ');
+    const nonce = Math.random().toString(36).substring(2);
+    const promptQuery = prompt ? `&prompt=${prompt}` : '';
+
+    return (
+      `https://accounts.google.com/o/oauth2/v2/auth` +
+      `?client_id=${encodeURIComponent(clientId)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent(scopes)}` +
+      `&include_granted_scopes=true` +
+      `&access_type=offline` +
+      `&nonce=${nonce}` +
+      promptQuery
+    );
+  }, []);
+
   useEffect(() => {
     // Capturar resultado del redirect de Google (solo en web)
     if (Platform.OS === 'web') {
@@ -99,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const tokens = await GoogleSignin.getTokens();
             await persistDriveToken(tokens.accessToken);
           } catch {}
-        } else {
+      } else {
           // Web/Electron: restaurar token persistido si no expiró
           try {
             const stored = await AsyncStorage.getItem(DRIVE_TOKEN_KEY);
@@ -108,6 +129,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setDriveToken(stored); // ya está guardado, solo restaurar en estado
             }
           } catch {}
+
+        // Electron: si Firebase no restauró sesión, intentar re-auth silenciosa una vez.
+        // Evita pedir login en cada arranque cuando la sesión de Google sigue activa.
+        const isElectron = typeof window !== 'undefined' && !!(window as any).electronAuth;
+        if (!u && isElectron) {
+          try {
+            const signedOutFlag = await AsyncStorage.getItem(ELECTRON_SIGNED_OUT_KEY);
+            if (signedOutFlag !== 'true') {
+              const authUrl = buildGoogleOAuthUrl('none');
+              const redirectUri = 'http://localhost';
+              const { access_token, id_token } = await (window as any).electronAuth.googleOAuth({
+                authUrl,
+                redirectUri,
+                silent: true,
+              });
+              if (access_token && id_token) {
+                const credential = GoogleAuthProvider.credential(id_token, access_token);
+                await signInWithCredential(auth, credential);
+                await persistDriveToken(access_token);
+                await AsyncStorage.removeItem(ELECTRON_SIGNED_OUT_KEY);
+              }
+            }
+          } catch {
+            // Si falla silent auth, se mantiene estado no autenticado y se pedirá login solo al usar Drive.
+          }
+        }
         }
       } else {
         setLicensed(false);
@@ -128,23 +175,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Electron: flujo OAuth propio con BrowserWindow (signInWithPopup no funciona en Electron)
       const isElectron = typeof window !== 'undefined' && !!(window as any).electronFS;
       if (isElectron) {
-        const clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
         const redirectUri = 'http://localhost';
-        const scopes = ['openid', 'email', 'profile', 'https://www.googleapis.com/auth/drive.file'].join(' ');
-        const nonce = Math.random().toString(36).substring(2);
-        const authUrl =
-          `https://accounts.google.com/o/oauth2/v2/auth` +
-          `?client_id=${encodeURIComponent(clientId)}` +
-          `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-          `&response_type=token%20id_token` +
-          `&scope=${encodeURIComponent(scopes)}` +
-          `&nonce=${nonce}`;
+        const authUrl = buildGoogleOAuthUrl();
         const electronAuth = (window as any).electronAuth;
-        if (!electronAuth) throw new Error('Reiniciá la aplicación para aplicar los cambios.');
-        const { access_token, id_token } = await electronAuth.googleOAuth({ authUrl, redirectUri });
+        if (!electronAuth) throw new Error('Restart the application to apply changes.');
+        const { access_token, id_token, refresh_token } = await electronAuth.googleOAuth({ authUrl, redirectUri });
+        if (!access_token || !id_token) throw new Error('No se complet\u00f3 la autenticaci\u00f3n con Google');
         const credential = GoogleAuthProvider.credential(id_token, access_token);
         await signInWithCredential(auth, credential);
         await persistDriveToken(access_token);
+        if (refresh_token) await electronAuth.saveRefreshToken(refresh_token);
+        await AsyncStorage.removeItem(ELECTRON_SIGNED_OUT_KEY);
         return;
       }
       await signInWithRedirect(auth, provider);
@@ -153,12 +194,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Android: OAuth se maneja desde login.native.tsx via expo-auth-session
     throw new Error('USE_EXPO_AUTH');
-  }, [persistDriveToken]);
+  }, [buildGoogleOAuthUrl, persistDriveToken]);
 
   const signOutUser = useCallback(async () => {
     await signOut(auth);
     setIsGuest(false);
     await persistDriveToken(null);
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && (window as any).electronAuth) {
+      await (window as any).electronAuth.clearRefreshToken();
+      await AsyncStorage.setItem(ELECTRON_SIGNED_OUT_KEY, 'true');
+    }
     await AsyncStorage.removeItem(GUEST_KEY);
   }, [persistDriveToken]);
 
@@ -198,38 +243,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {}
 
-      // 2. Re-auth silenciosa: crea una ventana oculta con prompt=none.
-      //    Si el usuario ya autorizó, Google devuelve tokens sin mostrar UI.
+      // 2. Re-auth silenciosa: intenta refresh token en el main process.
+      //    Si el refresh falla o no hay token guardado, retorna null.
       try {
-        const clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
         const redirectUri = 'http://localhost';
-        const scopes = ['openid', 'email', 'profile', 'https://www.googleapis.com/auth/drive.file'].join(' ');
-        const nonce = Math.random().toString(36).substring(2);
-        const authUrl =
-          `https://accounts.google.com/o/oauth2/v2/auth` +
-          `?client_id=${encodeURIComponent(clientId)}` +
-          `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-          `&response_type=token%20id_token` +
-          `&scope=${encodeURIComponent(scopes)}` +
-          `&nonce=${nonce}` +
-          `&prompt=none`; // sin UI; falla si requiere interacción
+        const authUrl = buildGoogleOAuthUrl('none'); // sin UI; falla si requiere interacción
         const { access_token, id_token } = await (window as any).electronAuth.googleOAuth({
           authUrl,
           redirectUri,
           silent: true,
         });
-        const credential = GoogleAuthProvider.credential(id_token, access_token);
-        await signInWithCredential(auth, credential);
-        await persistDriveToken(access_token);
-        return access_token;
+        if (access_token && id_token) {
+          const credential = GoogleAuthProvider.credential(id_token, access_token);
+          await signInWithCredential(auth, credential);
+          await persistDriveToken(access_token);
+          return access_token;
+        }
       } catch {
         // prompt=none falló (sesión expirada, requiere interacción) → caller muestra UI
-        return null;
       }
     }
 
     return null;
-  }, [persistDriveToken]);
+  }, [buildGoogleOAuthUrl, persistDriveToken]);
 
   return (
     <AuthContext.Provider value={{ user, isGuest, licensed, loading, driveToken, signIn, signOutUser, continueAsGuest, setDriveToken, refreshDriveToken }}>

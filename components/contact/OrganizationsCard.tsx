@@ -124,9 +124,9 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
                       const e = edadEnFecha(birthdate, org.date);
                       if (!e) return '';
                       const parts = [];
-                      if (e.years > 0) parts.push(`${e.years} ${e.years === 1 ? 'año' : 'años'}`);
-                      if (e.months > 0) parts.push(`${e.months} ${e.months === 1 ? 'mes' : 'meses'}`);
-                      if (e.days > 0) parts.push(`${e.days} ${e.days === 1 ? 'día' : 'días'}`);
+                      if (e.years > 0) parts.push(`${e.years} ${e.years === 1 ? 'year' : 'years'}`);
+                      if (e.months > 0) parts.push(`${e.months} ${e.months === 1 ? 'month' : 'months'}`);
+                      if (e.days > 0) parts.push(`${e.days} ${e.days === 1 ? 'day' : 'days'}`);
                       return parts.length ? ` · ${parts.join(', ')}` : '';
                     })()}
                   </Text>

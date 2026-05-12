@@ -26,9 +26,9 @@ export default function Dropdown({
   options,
   value,
   onSelect,
-  placeholder = 'Seleccionar',
+  placeholder = 'Select',
   allowNull = false,
-  nullLabel = 'Sin especificar',
+  nullLabel = 'Unspecified',
 }: DropdownProps) {
   const [open, setOpen] = useState(false);
 

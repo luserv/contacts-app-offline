@@ -90,7 +90,9 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
             <View key={doc.id} style={styles.docRow}>
               <View style={styles.docInfo}>
                 <Text style={styles.docType}>{doc.doc_type}</Text>
-                <Text style={styles.docNumber}>{doc.card_number}</Text>
+                <Text style={styles.docNumber}>
+                  {doc.doc_type === 'Licencia de conducir' ? `${t.documents.licenseType}: ` : ''}{doc.card_number}
+                </Text>
                 {doc.issue_date ? <Text style={styles.docDate}>{t.documents.issuedLabel} {doc.issue_date}</Text> : null}
                 {doc.expiry_date ? <Text style={styles.docDate}>{t.documents.expiryLabel} {doc.expiry_date}</Text> : null}
               </View>
@@ -118,10 +120,10 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
                 onSelect={v => v && setDocType(v)}
               />
 
-              <Text style={s.fieldLabel}>{t.documents.number} <Text style={s.required}>{t.common.required}</Text></Text>
+              <Text style={s.fieldLabel}>{docType === 'Licencia de conducir' ? t.documents.licenseType : t.documents.number} <Text style={s.required}>{t.common.required}</Text></Text>
               <TextInput
                 style={s.input} value={cardNumber} onChangeText={setCardNumber}
-                placeholder={t.documents.number} placeholderTextColor="#C7C7CC"
+                placeholder={docType === 'Licencia de conducir' ? t.documents.licenseType : t.documents.number} placeholderTextColor="#C7C7CC"
                 autoCapitalize="characters"
               />
 

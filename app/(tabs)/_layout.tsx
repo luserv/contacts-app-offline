@@ -17,10 +17,20 @@ export default function TabsLayout() {
         tabBarLabel: t.tabs.calendar,
         tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
       }} />
+      <Tabs.Screen name="menu" options={{
+        headerTitle: t.tabs.menu,
+        tabBarLabel: t.tabs.menu,
+        tabBarIcon: ({ color, size }) => <Ionicons name="menu" size={size} color={color} />,
+      }} />
       <Tabs.Screen name="config" options={{
-        headerTitle: t.tabs.config,
-        tabBarLabel: t.tabs.config,
+        href: null,
+        headerTitle: t.config.title,
         tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+      }} />
+      <Tabs.Screen name="notifications" options={{
+        href: null,
+        headerTitle: t.tabs.notifications,
+        tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} />,
       }} />
     </Tabs>
   );

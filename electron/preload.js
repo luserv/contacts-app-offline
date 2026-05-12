@@ -31,4 +31,7 @@ contextBridge.exposeInMainWorld('electronDrive', {
 
 contextBridge.exposeInMainWorld('electronAuth', {
   googleOAuth: (params) => ipcRenderer.invoke('auth:googleOAuth', params),
+  saveRefreshToken: (token) => ipcRenderer.invoke('auth:saveRefreshToken', token),
+  getRefreshToken: () => ipcRenderer.invoke('auth:getRefreshToken'),
+  clearRefreshToken: () => ipcRenderer.invoke('auth:clearRefreshToken'),
 });

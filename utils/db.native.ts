@@ -4,7 +4,10 @@
  * la misma interfaz que el adaptador de Electron.
  */
 import * as SQLite from 'expo-sqlite';
+import * as FileSystem from 'expo-file-system/legacy';
 import { initializeDatabase } from './dbInit';
+
+const EncodingType = (FileSystem as any).EncodingType || { Base64: 'base64' };
 
 let _db = SQLite.openDatabaseSync('contacts.db');
 
@@ -20,9 +23,136 @@ function makeAdapter() {
 // Inicialización síncrona al cargar el módulo
 (async () => { await initializeDatabase(makeAdapter()); })();
 
+function uniqueTempDbName(prefix: string): string {
+  return `${prefix}-${Date.now()}.db`;
+}
+
+function closeDatabase(database: SQLite.SQLiteDatabase) {
+  try { database.closeSync(); } catch (_) {}
+}
+
+/**
+ * Asegura que el directorio de bases de datos de SQLite exista.
+ * En lugar de intentar crearlo manualmente (que puede fallar por permisos de URI),
+ * abrimos y cerramos una base de datos temporal, lo cual obliga a expo-sqlite
+ * a crear el directorio necesario de forma segura.
+ */
+async function ensureDatabaseDirectory() {
+  const tempDb = SQLite.openDatabaseSync('__temp_init__.db');
+  try {
+    tempDb.closeSync();
+    SQLite.deleteDatabaseSync('__temp_init__.db');
+  } catch (_) {}
+}
+
+export async function exportDatabaseToFile(destinationPath: string): Promise<void> {
+  await ensureDatabaseDirectory();
+  
+  // Asegurar que todos los cambios en WAL se escriban en el archivo principal antes del backup
+  try {
+    _db.execSync('PRAGMA wal_checkpoint(TRUNCATE)');
+  } catch (e) {
+    console.warn('Error en wal_checkpoint:', e);
+  }
+
+  const tempName = uniqueTempDbName('contacts-export');
+  // En Android, expo-file-system no puede leer/copiar desde .../files/SQLite/.
+  // Por eso generamos el snapshot en cacheDirectory (que sí es accesible) y luego
+  // lo copiamos al destino solicitado.
+  const cacheDir = FileSystem.cacheDirectory;
+  if (!cacheDir) {
+    throw new Error('FileSystem.cacheDirectory no disponible');
+  }
+  const tempPath = cacheDir.endsWith('/') ? `${cacheDir}${tempName}` : `${cacheDir}/${tempName}`;
+  const snapshotDb = SQLite.openDatabaseSync(tempName, undefined, cacheDir);
+
+  try {
+    SQLite.backupDatabaseSync({
+      sourceDatabase: _db,
+      destDatabase: snapshotDb,
+    });
+
+    if (destinationPath !== tempPath) {
+      await FileSystem.copyAsync({ from: tempPath, to: destinationPath });
+    }
+  } finally {
+    closeDatabase(snapshotDb);
+    try { SQLite.deleteDatabaseSync(tempName, cacheDir); } catch (_) {}
+    try { await FileSystem.deleteAsync(tempPath, { idempotent: true }); } catch (_) {}
+  }
+}
+
+export async function importDatabaseFromFile(sourcePath: string): Promise<void> {
+  await ensureDatabaseDirectory();
+  const tempName = uniqueTempDbName('contacts-import');
+  // No escribir bajo SQLite/defaultDatabaseDirectory: en Android, copyAsync de
+  // expo-file-system rechaza .../files/SQLite/ ("isn't writable") aunque expo-sqlite
+  // abra BDs ahí. Caché sí es escribible; abrimos la copia temporal con el mismo directorio.
+  const cacheDir = FileSystem.cacheDirectory;
+  if (!cacheDir) {
+    throw new Error('FileSystem.cacheDirectory no disponible');
+  }
+  const tempPath = cacheDir.endsWith('/') ? `${cacheDir}${tempName}` : `${cacheDir}/${tempName}`;
+  let sourceDb: SQLite.SQLiteDatabase | null = null;
+
+  try {
+    await FileSystem.copyAsync({ from: sourcePath, to: tempPath });
+    sourceDb = SQLite.openDatabaseSync(tempName, undefined, cacheDir);
+
+    closeDatabase(_db);
+    try { SQLite.deleteDatabaseSync('contacts.db', SQLite.defaultDatabaseDirectory); } catch (_) {}
+
+    _db = SQLite.openDatabaseSync('contacts.db');
+    SQLite.backupDatabaseSync({
+      sourceDatabase: sourceDb,
+      destDatabase: _db,
+    });
+
+    // Forzar el guardado en el archivo principal tras la restauración
+    try {
+      _db.execSync('PRAGMA wal_checkpoint(TRUNCATE)');
+    } catch (e) {
+      console.warn('Error en wal_checkpoint tras restauración:', e);
+    }
+
+    await initializeDatabase(makeAdapter());
+  } finally {
+    if (sourceDb) closeDatabase(sourceDb);
+    try { SQLite.deleteDatabaseSync(tempName, cacheDir); } catch (_) {}
+  }
+}
+
+export async function readDatabaseAsBase64(): Promise<string> {
+  const cacheDir = FileSystem.cacheDirectory ?? '';
+  const tempPath = cacheDir.endsWith('/') ? `${cacheDir}contacts-drive-${Date.now()}.db` : `${cacheDir}/contacts-drive-${Date.now()}.db`;
+  await exportDatabaseToFile(tempPath);
+
+  try {
+    return await FileSystem.readAsStringAsync(tempPath, {
+      encoding: EncodingType.Base64,
+    });
+  } finally {
+    try { await FileSystem.deleteAsync(tempPath, { idempotent: true }); } catch (_) {}
+  }
+}
+
+export async function writeDatabaseFromBase64(base64: string): Promise<void> {
+  const cacheDir = FileSystem.cacheDirectory ?? '';
+  const tempPath = cacheDir.endsWith('/') ? `${cacheDir}contacts-restore-${Date.now()}.db` : `${cacheDir}/contacts-restore-${Date.now()}.db`;
+
+  try {
+    await FileSystem.writeAsStringAsync(tempPath, base64, {
+      encoding: EncodingType.Base64,
+    });
+    await importDatabaseFromFile(tempPath);
+  } finally {
+    try { await FileSystem.deleteAsync(tempPath, { idempotent: true }); } catch (_) {}
+  }
+}
+
 /** Cierra la conexión actual y la reabre (necesario tras reemplazar el archivo en disco). */
 export async function reloadDatabase(): Promise<void> {
-  try { _db.closeSync(); } catch (_) {}
+  closeDatabase(_db);
   _db = SQLite.openDatabaseSync('contacts.db');
   await initializeDatabase(makeAdapter());
 }

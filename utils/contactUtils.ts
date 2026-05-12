@@ -1,6 +1,6 @@
 import { T } from './i18n';
 
-export const DOC_TYPES = ['Pasaporte', 'Cédula', 'Licencia de conducir', 'Otro'];
+export const DOC_TYPES = ['Passport', 'ID Card', "Driver's License", 'Other'];
 
 /** Normaliza texto para almacenamiento en BD: recorta y convierte a MAYÚSCULAS. Retorna null si está vacío. */
 export function toUpper(s: string | null | undefined): string | null {
@@ -15,7 +15,7 @@ export function toDisplay(s: string | null | undefined): string {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
-export const DOCS_WITH_DATES = ['Licencia de conducir', 'Pasaporte'];
+export const DOCS_WITH_DATES = ["Driver's License", 'Passport'];
 
 export const EXCLUDED_FIELDS = [
   'contact_id', 'first_name', 'middle_name', 'surname',

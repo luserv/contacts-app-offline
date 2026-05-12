@@ -6,16 +6,19 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../../utils/authContext';
 import { downloadDB, uploadDB } from '../../utils/driveSync';
-import { reloadDatabase } from '../../utils/db';
+import {
+  exportDatabaseToFile,
+  importDatabaseFromFile,
+  readDatabaseAsBase64,
+  reloadDatabase,
+  writeDatabaseFromBase64,
+} from '../../utils/db';
 
 const PAYPAL_ME = process.env.EXPO_PUBLIC_PAYPAL_ME ?? 'https://paypal.me/TUUSUARIO';
 const LICENSE_PRICE = process.env.EXPO_PUBLIC_LICENSE_PRICE ?? '4.99';
 const SUPPORT_EMAIL = process.env.EXPO_PUBLIC_SUPPORT_EMAIL ?? 'tu@email.com';
-import { DB_NAME, useContacts } from '../../utils/context';
+import { useContacts } from '../../utils/context';
 import { Lang, useI18n } from '../../utils/i18n';
-import { getScheduledBirthdayCount, notificationsAvailable, requestNotificationPermissions, scheduleAllBirthdayNotifications } from '../../utils/notifications';
-
-const DB_PATH = `${FileSystem.documentDirectory}SQLite/${DB_NAME}`;
 
 const LANGUAGES: { code: Lang; label: string; flag: string }[] = [
   { code: 'es', label: 'Español', flag: '🇪🇸' },
@@ -24,10 +27,8 @@ const LANGUAGES: { code: Lang; label: string; flag: string }[] = [
 
 export default function Config() {
   const [status, setStatus] = useState<string | null>(null);
-  const [notifStatus, setNotifStatus] = useState<string | null>(null);
   const [driveStatus, setDriveStatus] = useState<string | null>(null);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
-  const [notifCount, setNotifCount] = useState<number | null>(null);
   const { contacts, fetchContacts, importVcf } = useContacts();
   const { t, lang, setLang } = useI18n();
   const { user, licensed, signIn, signOutUser, driveToken, refreshDriveToken } = useAuth();
@@ -36,7 +37,6 @@ export default function Config() {
 
   useEffect(() => {
     fetchContacts();
-    getScheduledBirthdayCount().then(setNotifCount);
   }, []);
 
   const handleExport = async () => {
@@ -53,14 +53,11 @@ export default function Config() {
         return;
       }
 
-      const dbInfo = await FileSystem.getInfoAsync(DB_PATH);
-      if (!dbInfo.exists) {
-        setStatus(t.config.dbNotFound);
-        return;
-      }
-
-      const exportPath = `${FileSystem.cacheDirectory}contacts_backup_${Date.now()}.db`;
-      await FileSystem.copyAsync({ from: DB_PATH, to: exportPath });
+      const cacheDir = FileSystem.cacheDirectory ?? '';
+      const exportPath = cacheDir.endsWith('/') 
+        ? `${cacheDir}contacts_backup_${Date.now()}.db` 
+        : `${cacheDir}/contacts_backup_${Date.now()}.db`;
+      await exportDatabaseToFile(exportPath);
 
       const canShare = await Sharing.isAvailableAsync();
       if (!canShare) {
@@ -78,25 +75,6 @@ export default function Config() {
     } catch (e) {
       console.error(e);
       setStatus(t.config.exportErrorPrefix + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setLoadingOp(null);
-    }
-  };
-
-  const handleScheduleNotifications = async () => {
-    try {
-      setLoadingOp('notifications');
-      setNotifStatus(null);
-      const granted = await requestNotificationPermissions();
-      if (!granted) {
-        setNotifStatus(t.config.notifPermError);
-        return;
-      }
-      const count = await scheduleAllBirthdayNotifications(contacts);
-      setNotifCount(count);
-      setNotifStatus(t.config.notifScheduled(count));
-    } catch (e) {
-      setNotifStatus(t.config.notifErrorPrefix + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoadingOp(null);
     }
@@ -121,7 +99,7 @@ export default function Config() {
 
       if (!content) return;
       const { imported, skipped } = await importVcf(content);
-      setStatus(`VCF: ${imported} importados${skipped > 0 ? `, ${skipped} omitidos` : ''}.`);
+      setStatus(`VCF: ${imported} imported${skipped > 0 ? `, ${skipped} skipped` : ''}.`);
     } catch (e) {
       setStatus('Error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -172,14 +150,7 @@ export default function Config() {
 
               const file = result.assets[0];
 
-              const sqliteDir = `${FileSystem.documentDirectory}SQLite`;
-              const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
-              if (!dirInfo.exists) {
-                await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
-              }
-
-              await FileSystem.copyAsync({ from: file.uri, to: DB_PATH });
-              await reloadDatabase();
+              await importDatabaseFromFile(file.uri);
               await fetchContacts();
 
               setStatus(t.config.importSuccess);
@@ -244,7 +215,7 @@ export default function Config() {
       if (typeof window !== 'undefined' && (window as any).electronDrive) {
         base64 = await (window as any).electronDrive.readDBAsBase64();
       } else {
-        base64 = await FileSystem.readAsStringAsync(DB_PATH, { encoding: FileSystem.EncodingType.Base64 });
+        base64 = await readDatabaseAsBase64();
       }
       await uploadDB(token, base64);
       setDriveStatus(t.drive.uploadSuccess);
@@ -257,7 +228,7 @@ export default function Config() {
             if (typeof window !== 'undefined' && (window as any).electronDrive) {
               base64 = await (window as any).electronDrive.readDBAsBase64();
             } else {
-              base64 = await FileSystem.readAsStringAsync(DB_PATH, { encoding: FileSystem.EncodingType.Base64 });
+              base64 = await readDatabaseAsBase64();
             }
             await uploadDB(newToken, base64);
             setDriveStatus(t.drive.uploadSuccess);
@@ -291,10 +262,7 @@ export default function Config() {
           const result = await (window as any).electronDrive.writeDBFromBase64(base64);
           if (result?.error) throw new Error(result.error);
         } else {
-          const sqliteDir = `${FileSystem.documentDirectory}SQLite`;
-          const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
-          if (!dirInfo.exists) await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
-          await FileSystem.writeAsStringAsync(DB_PATH, base64, { encoding: FileSystem.EncodingType.Base64 });
+          await writeDatabaseFromBase64(base64);
         }
         setDriveStatus(t.drive.restoreSuccess);
         await reloadDatabase();
@@ -325,8 +293,6 @@ export default function Config() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{t.config.title}</Text>
-
       {/* Idioma */}
       <View style={[styles.card, { marginBottom: 16 }]}>
         <Text style={styles.cardTitle}>{t.config.language}</Text>
@@ -345,60 +311,31 @@ export default function Config() {
         </View>
       </View>
 
-      {/* Notificaciones */}
-      <View style={[styles.card, { marginBottom: 16 }]}>
-        <Text style={styles.cardTitle}>{t.config.notifications}</Text>
-        <Text style={styles.cardDesc}>
-          {t.config.notificationsDesc}
-          {notifCount !== null ? t.config.notificationsActive(notifCount) : ''}
-        </Text>
-        {notificationsAvailable ? (
-          <Pressable
-            style={[styles.button, styles.buttonNotif, !!loadingOp && styles.buttonDisabled]}
-            onPress={handleScheduleNotifications}
-            disabled={!!loadingOp}
-          >
-            {loadingOp === 'notifications'
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.buttonText}>{t.config.scheduleBtn}</Text>}
-          </Pressable>
-        ) : (
-          <View style={styles.statusBox}>
-            <Text style={styles.statusText}>{t.config.notificationsUnavailable}</Text>
-          </View>
-        )}
-        {notifStatus && (
-          <View style={[styles.statusBox, notifStatus.startsWith('Error') && styles.statusBoxError]}>
-            <Text style={styles.statusText}>{notifStatus}</Text>
-          </View>
-        )}
-      </View>
-
       {/* Cuenta */}
       <View style={[styles.card, { marginBottom: 16 }]}>
-        <Text style={styles.cardTitle}>Cuenta</Text>
+        <Text style={styles.cardTitle}>Account</Text>
         <View style={styles.accountRow}>
           <View>
             <Text style={styles.accountEmail}>{user?.email}</Text>
             <Text style={styles.accountLicense}>
-              {licensed ? '✅ Licencia activa' : '🔒 Plan gratuito'}
+              {licensed ? '✅ Active license' : '🔒 Free plan'}
             </Text>
           </View>
         </View>
         <Pressable style={[styles.button, styles.buttonSignOut]} onPress={signOutUser}>
-          <Text style={styles.buttonText}>Cerrar sesión</Text>
+          <Text style={styles.buttonText}>Sign out</Text>
         </Pressable>
       </View>
 
       {/* Upgrade — solo visible si no tiene licencia y está logueado */}
       {!licensed && user && (
         <View style={[styles.card, { marginBottom: 16 }]}>
-          <Text style={styles.cardTitle}>Quitar anuncios</Text>
+          <Text style={styles.cardTitle}>Remove ads</Text>
           <Text style={styles.cardDesc}>
-            Paga una vez y elimina los anuncios para siempre. Precio: ${LICENSE_PRICE} USD.
+            Pay once and remove ads forever. Price: ${LICENSE_PRICE} USD.
           </Text>
 
-          <Text style={styles.upgradeStep}>1. Copia tu ID de usuario:</Text>
+          <Text style={styles.upgradeStep}>1. Copy your User ID:</Text>
           <View style={styles.uidRow}>
             <TextInput
               style={styles.uidInput}
@@ -408,25 +345,25 @@ export default function Config() {
             />
           </View>
 
-          <Text style={styles.upgradeStep}>2. Paga con PayPal:</Text>
+          <Text style={styles.upgradeStep}>2. Pay with PayPal:</Text>
           <Pressable
             style={[styles.button, styles.buttonPayPal]}
             onPress={() => Linking.openURL(PAYPAL_ME)}
           >
-            <Text style={styles.buttonText}>Pagar con PayPal — ${LICENSE_PRICE}</Text>
+            <Text style={styles.buttonText}>Pay with PayPal — ${LICENSE_PRICE}</Text>
           </Pressable>
 
           <Text style={styles.upgradeHint}>
-            3. Envía el comprobante de pago junto con tu ID de usuario al correo{' '}
+            3. Send the payment receipt along with your User ID to{' '}
             <Text
               style={styles.upgradeLink}
               onPress={() => Linking.openURL(
-                `mailto:${SUPPORT_EMAIL}?subject=Licencia%20Contacts&body=ID%20de%20usuario%3A%20${user.uid}`
+                `mailto:${SUPPORT_EMAIL}?subject=Contacts%20License&body=User%20ID%3A%20${user.uid}`
               )}
             >
               {SUPPORT_EMAIL}
             </Text>
-            {' '}y activamos tu licencia en menos de 24 h.
+            {' '}and we will activate your license within 24 hours.
           </Text>
         </View>
       )}
@@ -516,12 +453,6 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 24,
-  },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -578,7 +509,6 @@ const styles = StyleSheet.create({
   accountRow: { marginBottom: 16 },
   accountEmail: { fontSize: 15, fontWeight: '600', color: '#000', marginBottom: 4 },
   accountLicense: { fontSize: 13, color: '#8E8E93' },
-  buttonNotif: { backgroundColor: '#FF9500' },
   buttonExport: { backgroundColor: '#007AFF' },
   buttonImport: { backgroundColor: '#34C759' },
   buttonDisabled: { opacity: 0.5 },

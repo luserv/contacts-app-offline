@@ -1,5 +1,7 @@
 {
   "name": "contacts",
+  "description": "app to save your contacts",
+  "author": "luserv",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -8,6 +10,10 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "lint": "expo lint",
+    "android:dev": "cross-env APP_ENV=development expo run:android",
+    "android:prod": "cross-env APP_ENV=production expo run:android",
+    "build:dev": "eas build --profile development --platform android",
+    "build:prod": "eas build --profile production --platform android",
     "sqlite:init": "node scripts/init-sqlite.mjs",
     "sqlite:seed": "node scripts/init-sqlite.mjs --seed",
     "generate:ico": "node scripts/generate-ico.mjs",

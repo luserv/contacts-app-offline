@@ -1,6 +1,28 @@
 const { app, BrowserWindow, ipcMain, protocol, net, dialog } = require('electron');
+const os = require('os');
 const path = require('path');
 const fs = require('fs');
+
+// Cargar variables de entorno desde .env (sin depender de dotenv)
+// En producción el .env se copia a resourcesPath via extraResources
+try {
+  const devPath = path.join(__dirname, '..', '.env');
+  const prodPath = path.join(process.resourcesPath, '.env');
+  const dotenvPath = fs.existsSync(prodPath) ? prodPath : devPath;
+  if (fs.existsSync(dotenvPath)) {
+    const lines = fs.readFileSync(dotenvPath, 'utf8').split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx === -1) continue;
+      const key = trimmed.slice(0, eqIdx).trim();
+      const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+      if (key && !(key in process.env)) process.env[key] = val;
+    }
+  }
+} catch (_) {}
+
 const { createTablesSql, migrationsSql, seedSql } = require('../utils/dbSchema');
 
 // Registrar el protocolo antes de que la app esté lista
@@ -11,10 +33,77 @@ protocol.registerSchemesAsPrivileged([
 // Obtener ruta de datos del usuario (persiste entre actualizaciones)
 const userDataPath = app.getPath('userData');
 const dbPath = path.join(userDataPath, 'contacts.db');
+const dbWalPath = `${dbPath}-wal`;
+const dbShmPath = `${dbPath}-shm`;
+const refreshTokenPath = path.join(userDataPath, 'google_refresh_token.json');
 
 let db = null;
 
+function saveRefreshToken(token) {
+  try { fs.writeFileSync(refreshTokenPath, JSON.stringify({ token }), 'utf8'); } catch (_) {}
+}
+
+function getRefreshToken() {
+  try {
+    if (fs.existsSync(refreshTokenPath)) {
+      const raw = fs.readFileSync(refreshTokenPath, 'utf8');
+      return JSON.parse(raw).token;
+    }
+  } catch (_) {}
+  return null;
+}
+
+function clearRefreshToken() {
+  try { if (fs.existsSync(refreshTokenPath)) fs.unlinkSync(refreshTokenPath); } catch (_) {}
+}
+
+function removeIfExists(targetPath) {
+  try {
+    if (fs.existsSync(targetPath)) fs.unlinkSync(targetPath);
+  } catch (_) {}
+}
+
+function closeDbConnection() {
+  if (!db) return;
+  try { db.pragma('wal_checkpoint(FULL)'); } catch (_) {}
+  try { db.close(); } catch (_) {}
+  db = null;
+}
+
+function replaceDatabaseFromBuffer(buffer) {
+  closeDbConnection();
+  removeIfExists(dbWalPath);
+  removeIfExists(dbShmPath);
+  removeIfExists(dbPath);
+  fs.writeFileSync(dbPath, buffer);
+  initDB();
+}
+
+function replaceDatabaseFromFile(sourcePath) {
+  closeDbConnection();
+  removeIfExists(dbWalPath);
+  removeIfExists(dbShmPath);
+  removeIfExists(dbPath);
+  fs.copyFileSync(sourcePath, dbPath);
+  initDB();
+}
+
+function sqlString(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function createDatabaseSnapshot(snapshotPath) {
+  removeIfExists(snapshotPath);
+  db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+  db.exec(`VACUUM INTO ${sqlString(snapshotPath)}`);
+}
+
 function initDB() {
+  // Asegurar que el directorio de datos existe
+  if (!fs.existsSync(userDataPath)) {
+    fs.mkdirSync(userDataPath, { recursive: true });
+  }
+
   // En producción, better-sqlite3 está fuera del asar (asarUnpack)
   const bsPath = app.isPackaged
     ? path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'better-sqlite3')
@@ -67,7 +156,7 @@ function initDB() {
 // Manejadores IPC — importar VCF
 ipcMain.handle('fs:readVcf', async () => {
   const result = await dialog.showOpenDialog({
-    title: 'Importar contactos VCF',
+    title: 'Import VCF Contacts',
     filters: [{ name: 'vCard', extensions: ['vcf', 'vcard'] }],
     properties: ['openFile'],
   });
@@ -99,16 +188,13 @@ ipcMain.handle('notif:checkBirthdays', () => {
 // Manejadores IPC — archivo (import/export DB)
 ipcMain.handle('fs:importDB', async () => {
   const result = await dialog.showOpenDialog({
-    title: 'Importar base de datos',
+    title: 'Import Database',
     filters: [{ name: 'SQLite DB', extensions: ['db', 'sqlite', 'sqlite3'] }],
     properties: ['openFile'],
   });
   if (result.canceled || result.filePaths.length === 0) return { canceled: true };
   try {
-    fs.copyFileSync(result.filePaths[0], dbPath);
-    // Reabrir la conexión con el nuevo archivo
-    db.close();
-    initDB();
+    replaceDatabaseFromFile(result.filePaths[0]);
     return { success: true };
   } catch (e) {
     return { error: e.message };
@@ -117,15 +203,13 @@ ipcMain.handle('fs:importDB', async () => {
 
 ipcMain.handle('fs:exportDB', async () => {
   const result = await dialog.showSaveDialog({
-    title: 'Exportar base de datos',
+    title: 'Export Database',
     defaultPath: `contacts_backup_${Date.now()}.db`,
     filters: [{ name: 'SQLite DB', extensions: ['db'] }],
   });
   if (result.canceled || !result.filePath) return { canceled: true };
   try {
-    // Hacer checkpoint WAL antes de copiar
-    db.pragma('wal_checkpoint(FULL)');
-    fs.copyFileSync(dbPath, result.filePath);
+    createDatabaseSnapshot(result.filePath);
     return { success: true };
   } catch (e) {
     return { error: e.message };
@@ -134,72 +218,144 @@ ipcMain.handle('fs:exportDB', async () => {
 
 // Manejadores IPC — backup Drive (base64)
 ipcMain.handle('db:readAsBase64', () => {
-  db.pragma('wal_checkpoint(FULL)');
-  return fs.readFileSync(dbPath).toString('base64');
+  const snapshotPath = path.join(os.tmpdir(), `contacts-drive-${Date.now()}.db`);
+  try {
+    createDatabaseSnapshot(snapshotPath);
+    return fs.readFileSync(snapshotPath).toString('base64');
+  } finally {
+    removeIfExists(snapshotPath);
+  }
 });
 
 ipcMain.handle('db:writeFromBase64', (_event, base64) => {
   try {
     const buffer = Buffer.from(base64, 'base64');
-    db.close();
-    fs.writeFileSync(dbPath, buffer);
-    initDB();
+    replaceDatabaseFromBuffer(buffer);
     return { success: true };
   } catch (e) {
     return { error: e.message };
   }
 });
 
+ipcMain.handle('auth:saveRefreshToken', (_event, token) => {
+  saveRefreshToken(token);
+});
+
+ipcMain.handle('auth:getRefreshToken', () => {
+  return getRefreshToken();
+});
+
+ipcMain.handle('auth:clearRefreshToken', () => {
+  clearRefreshToken();
+});
+
 // ── IPC: Google OAuth (reemplaza signInWithPopup de Firebase) ─────────────────
 
-ipcMain.handle('auth:googleOAuth', (_event, { authUrl, redirectUri, silent = false }) => {
+ipcMain.handle('auth:googleOAuth', async (_event, { authUrl, redirectUri, silent = false }) => {
+  // ── Modo silencioso: usar refresh token para obtener access token ──────────
+  if (silent) {
+    const savedRefreshToken = getRefreshToken();
+    if (savedRefreshToken) {
+      try {
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+            client_secret: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_SECRET,
+            refresh_token: savedRefreshToken,
+            grant_type: 'refresh_token',
+          }),
+        });
+
+        if (tokenResponse.ok) {
+          const tokens = await tokenResponse.json();
+          if (tokens.access_token) {
+            // Obtener id_token via tokeninfo endpoint
+            const idTokenResp = await fetch(
+              `https://oauth2.googleapis.com/tokeninfo?access_token=${tokens.access_token}`,
+            );
+            const idTokenInfo = idTokenResp.ok ? await idTokenResp.json() : {};
+            return {
+              access_token: tokens.access_token,
+              id_token: idTokenInfo.id_token ?? null,
+              refresh_token: savedRefreshToken,
+            };
+          }
+        }
+      } catch (_) {}
+    }
+    // Si falla el refresh o no hay token, retorna null para que el caller
+    // abra la ventana normal (el usuario verá la pantalla de consentimiento)
+    return { access_token: null, id_token: null, refresh_token: null };
+  }
+
+  // ── Flujo normal: abrir ventana para que el usuario autorice ────────────────
   return new Promise((resolve, reject) => {
     let handled = false;
 
     const authWindow = new BrowserWindow({
-      width: silent ? 1 : 500,
-      height: silent ? 1 : 650,
-      show: !silent,
-      alwaysOnTop: !silent,
+      width: 500,
+      height: 650,
+      show: true,
       webPreferences: { nodeIntegration: false, contextIsolation: true },
     });
-
-    // Timeout para re-auth silenciosa: si Google no responde en 8 s, falla limpiamente
-    const timeout = silent
-      ? setTimeout(() => {
-          if (!handled) {
-            handled = true;
-            authWindow.destroy();
-            reject(new Error('SILENT_AUTH_TIMEOUT'));
-          }
-        }, 8000)
-      : null;
 
     authWindow.loadURL(authUrl);
 
     authWindow.webContents.on('will-redirect', (event, redirectUrl) => {
       if (!redirectUrl.startsWith(redirectUri) || handled) return;
       handled = true;
-      if (timeout) clearTimeout(timeout);
       event.preventDefault();
       authWindow.destroy();
 
-      const hash = redirectUrl.includes('#') ? redirectUrl.split('#')[1] : '';
-      const params = new URLSearchParams(hash);
-      const access_token = params.get('access_token');
-      const id_token = params.get('id_token');
+      // Flujo con código: extraer ?code= de la query string
+      const urlObj = new URL(redirectUrl);
+      const code = urlObj.searchParams.get('code');
+      const error = urlObj.searchParams.get('error');
 
-      if (access_token && id_token) {
-        resolve({ access_token, id_token });
-      } else {
-        reject(new Error(params.get('error') || 'No se recibieron los tokens de Google'));
+      if (error) {
+        reject(new Error(error));
+        return;
       }
+
+      if (!code) {
+        reject(new Error('Authorization code not received'));
+        return;
+      }
+
+      // Intercambiar código por tokens (incluye refresh_token)
+      fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+          client_secret: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_SECRET,
+          code,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+        }),
+      })
+        .then(resp => resp.json())
+        .then(tokens => {
+          if (tokens.access_token && tokens.id_token) {
+            saveRefreshToken(tokens.refresh_token ?? '');
+            resolve({
+              access_token: tokens.access_token,
+              id_token: tokens.id_token,
+              refresh_token: tokens.refresh_token ?? null,
+            });
+          } else {
+            reject(new Error(tokens.error_description || 'Error exchanging code for tokens'));
+          }
+        })
+        .catch(reject);
     });
 
     authWindow.on('closed', () => {
       if (!handled) {
-        if (timeout) clearTimeout(timeout);
-        reject(new Error(silent ? 'SILENT_AUTH_TIMEOUT' : 'Autenticación cancelada'));
+        handled = true;
+        reject(new Error('Authentication cancelled'));
       }
     });
   });
@@ -276,7 +432,7 @@ function createWindow() {
 
 process.on('uncaughtException', (err) => {
   const { dialog } = require('electron');
-  dialog.showErrorBox('Error al iniciar Contacts', err.stack || err.message);
+  dialog.showErrorBox('Error starting Contacts', err.stack || err.message);
   app.quit();
 });
 
@@ -331,7 +487,7 @@ app.whenReady().then(() => {
   try {
     initDB();
   } catch (err) {
-    dialog.showErrorBox('Error al iniciar la base de datos', err.stack || err.message);
+    dialog.showErrorBox('Error initializing database', err.stack || err.message);
     app.quit();
     return;
   }
@@ -342,7 +498,7 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 }).catch((err) => {
-  dialog.showErrorBox('Error al iniciar Contacts', err.stack || err.message);
+  dialog.showErrorBox('Error starting Contacts', err.stack || err.message);
   app.quit();
 });
 

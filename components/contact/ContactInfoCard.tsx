@@ -186,7 +186,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
               <Text style={s.fieldLabel}>{t.contactInfo.phoneLabel}</Text>
               <TextInput
                 style={s.input} value={phoneLabelInput} onChangeText={setPhoneLabelInput}
-                placeholder="Celular" placeholderTextColor="#C7C7CC"
+                placeholder="Mobile" placeholderTextColor="#C7C7CC"
               />
             </ScrollView>
             <View style={s.modalActions}>

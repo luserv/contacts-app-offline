@@ -17,6 +17,10 @@ declare global {
 
 /** No-op en Electron: el proceso principal maneja la conexión. */
 export async function reloadDatabase(): Promise<void> {}
+export async function exportDatabaseToFile(_destinationPath: string): Promise<void> {}
+export async function importDatabaseFromFile(_sourcePath: string): Promise<void> {}
+export async function readDatabaseAsBase64(): Promise<string> { return ''; }
+export async function writeDatabaseFromBase64(_base64: string): Promise<void> {}
 
 export const db = {
   getAllAsync: <T>(sql: string, ...params: unknown[]): Promise<T[]> =>

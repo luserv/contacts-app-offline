@@ -62,6 +62,12 @@ export default function CalendarScreen() {
   }, [contacts]);
 
   const getBirthdays = (day: number) => birthdayMap.get(`${viewMonth}-${day}`) ?? [];
+  const monthlyBirthdaysTotal = useMemo(
+    () => Array.from(birthdayMap.entries())
+      .filter(([key]) => key.startsWith(`${viewMonth}-`))
+      .reduce((acc, [, entries]) => acc + entries.length, 0),
+    [birthdayMap, viewMonth]
+  );
 
   const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
   const firstDow = new Date(viewYear, viewMonth - 1, 1).getDay();
@@ -166,7 +172,9 @@ export default function CalendarScreen() {
       <View style={styles.legend}>
         <View style={styles.legendDot} />
         <Text style={styles.legendText}>
-          {lang === 'es' ? 'Tiene cumpleaños' : 'Has birthday'}
+          {lang === 'es'
+            ? `Tiene cumpleaños (${monthlyBirthdaysTotal})`
+            : `Has birthdays (${monthlyBirthdaysTotal})`}
         </Text>
       </View>
 
