@@ -12,6 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AdBanner from '../../components/AdBanner';
 import Dropdown from '../../components/Dropdown';
 import {
@@ -42,6 +43,7 @@ import {
 } from '../../utils/organizationFilter';
 import { MaritalStatus, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
+import { useResponsive } from '../../utils/responsive';
 import { edadEnFecha } from '../../utils/contactUtils';
 import { rescheduleExpiredBirthdayNotifications } from '../../utils/notifications';
 
@@ -76,6 +78,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const { contacts, fetchContacts, createContact, getMaritalStatuses, addIdentityCard, searchContacts } = useContacts();
   const { t } = useI18n();
+  const { isDesktop, r } = useResponsive();
+  const insets = useSafeAreaInsets();
 
   const [searchResults, setSearchResults] = React.useState<ContactListItem[]>([]);
   const genderFilterOptions = React.useMemo(() => getGenderFilterOptions(t), [t]);
@@ -245,103 +249,104 @@ export default function HomeScreen() {
         ),
       }} />
 
-      <View style={styles.filtersPanel}>
-        <View style={styles.searchContainer}>
-          <Search size={20} color="#8E8E93" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={`${t.contacts.search}  (age:23)`}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#8E8E93"
-            autoCapitalize="none"
-          />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')}>
-              <X size={20} color="#8E8E93" />
-            </Pressable>
+      <View style={styles.innerWrap}>
+        <View style={[styles.filtersPanel, isDesktop && styles.filtersPanelDesktop]}>
+          <View style={[styles.searchContainer, isDesktop && styles.searchContainerDesktop]}>
+            <Search size={20} color="#8E8E93" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={`${t.contacts.search}  (age:23)`}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor="#8E8E93"
+              autoCapitalize="none"
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')}>
+                <X size={20} color="#8E8E93" />
+              </Pressable>
+            )}
+          </View>
+
+          {chips.length > 0 && (
+            <View style={styles.activeFilterRow}>
+              {chips.map((chip, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && <Text style={styles.chipAnd}>&amp;</Text>}
+                  <View style={styles.activeFilterChip}>
+                    <Text style={styles.activeFilterText}>{chip}</Text>
+                  </View>
+                </React.Fragment>
+              ))}
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8} style={styles.chipClear}>
+                <X size={14} color="#FF3B30" />
+              </Pressable>
+            </View>
           )}
         </View>
 
-        {chips.length > 0 && (
-          <View style={styles.activeFilterRow}>
-            {chips.map((chip, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && <Text style={styles.chipAnd}>&amp;</Text>}
-                <View style={styles.activeFilterChip}>
-                  <Text style={styles.activeFilterText}>{chip}</Text>
-                </View>
-              </React.Fragment>
-            ))}
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={8} style={styles.chipClear}>
-              <X size={14} color="#FF3B30" />
-            </Pressable>
-          </View>
-        )}
+        <Text style={[styles.contactCount, isDesktop && styles.contactCountDesktop]}>
+          {filteredContacts.length} {filteredContacts.length === 1 ? 'contact' : 'contacts'}
+        </Text>
 
-      </View>
-
-      <Text style={styles.contactCount}>
-        {filteredContacts.length} {filteredContacts.length === 1 ? 'contact' : 'contacts'}
-      </Text>
-
-      <View style={{ flex: 1 }}>
-        <FlatList
-          data={filteredContacts}
-          keyExtractor={(item) => item.contact_id}
-          renderItem={({ item }) => (
-            <Pressable
-              style={styles.contactItem}
-              onPress={() => router.push(`/contact/${item.contact_id}`)}
-            >
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>
-                  {`${item.first_name ?? ''} ${item.middle_name ?? ''} ${item.surname ?? ''}`.replace(/\s+/g, ' ').trim()}
-                </Text>
-                {(sortKey === 'age_asc' || sortKey === 'age_desc') && (
-                  <Text style={styles.contactAge}>
-                    {formatFullAge(item.birthdate) ?? 'Age not recorded'}
+        <View style={{ flex: 1 }}>
+          <FlatList
+            data={filteredContacts}
+            keyExtractor={(item) => item.contact_id}
+            renderItem={({ item }) => (
+              <Pressable
+                style={[styles.contactItem, isDesktop && styles.contactItemDesktop]}
+                onPress={() => router.push(`/contact/${item.contact_id}`)}
+              >
+                <View style={styles.contactInfo}>
+                  <Text style={[styles.contactName, isDesktop && styles.contactNameDesktop]}>
+                    {`${item.first_name ?? ''} ${item.middle_name ?? ''} ${item.surname ?? ''}`.replace(/\s+/g, ' ').trim()}
                   </Text>
-                )}
-                {searchQuery.trim() && (item.achievement || item.organization_name) ? (
-                  <>
-                    {item.achievement ? (
-                      <Text style={styles.contactAchievement}>{item.achievement}</Text>
-                    ) : null}
-                    {item.organization_name ? (
-                      <Text style={styles.contactAchievementOrg}>{item.organization_name}</Text>
-                    ) : null}
-                    {item.organization_date ? (
-                      <Text style={styles.contactAchievementDate}>
-                        {item.organization_date}
-                        {(() => {
-                          if (!item.birthdate) return '';
-                          const e = edadEnFecha(item.birthdate, item.organization_date);
-                          if (!e) return '';
-                          const parts = [];
-                          if (e.years > 0) parts.push(`${e.years} ${e.years === 1 ? 'year' : 'years'}`);
-                          if (e.months > 0) parts.push(`${e.months} ${e.months === 1 ? 'month' : 'months'}`);
-                          if (e.days > 0) parts.push(`${e.days} ${e.days === 1 ? 'day' : 'days'}`);
-                          return parts.length ? ` · ${parts.join(', ')}` : '';
-                        })()}
-                      </Text>
-                    ) : null}
-                  </>
-                ) : null}
+                  {(sortKey === 'age_asc' || sortKey === 'age_desc') && (
+                    <Text style={styles.contactAge}>
+                      {formatFullAge(item.birthdate) ?? 'Age not recorded'}
+                    </Text>
+                  )}
+                  {searchQuery.trim() && (item.achievement || item.organization_name) ? (
+                    <>
+                      {item.achievement ? (
+                        <Text style={styles.contactAchievement}>{item.achievement}</Text>
+                      ) : null}
+                      {item.organization_name ? (
+                        <Text style={styles.contactAchievementOrg}>{item.organization_name}</Text>
+                      ) : null}
+                      {item.organization_date ? (
+                        <Text style={styles.contactAchievementDate}>
+                          {item.organization_date}
+                          {(() => {
+                            if (!item.birthdate) return '';
+                            const e = edadEnFecha(item.birthdate, item.organization_date);
+                            if (!e) return '';
+                            const parts = [];
+                            if (e.years > 0) parts.push(`${e.years} ${e.years === 1 ? 'year' : 'years'}`);
+                            if (e.months > 0) parts.push(`${e.months} ${e.months === 1 ? 'month' : 'months'}`);
+                            if (e.days > 0) parts.push(`${e.days} ${e.days === 1 ? 'day' : 'days'}`);
+                            return parts.length ? ` · ${parts.join(', ')}` : '';
+                          })()}
+                        </Text>
+                      ) : null}
+                    </>
+                  ) : null}
+                </View>
+              </Pressable>
+            )}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>{t.contacts.empty}</Text>
               </View>
-            </Pressable>
-          )}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>{t.contacts.empty}</Text>
-            </View>
-          )}
-          contentContainerStyle={styles.listContent}
-        />
+            )}
+            contentContainerStyle={[styles.listContent, isDesktop && styles.listContentDesktop]}
+          />
 
-        <Pressable style={styles.fab} onPress={handleOpenModal}>
-          <Plus size={24} color="#FFFFFF" />
-        </Pressable>
+          <Pressable style={[styles.fab, isDesktop && styles.fabDesktop]} onPress={handleOpenModal}>
+            <Plus size={24} color="#FFFFFF" />
+          </Pressable>
+        </View>
       </View>
 
       <AdBanner />
@@ -633,6 +638,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
 
+  innerWrap: {
+    flex: 1,
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
+  },
+
   filtersPanel: {
     paddingHorizontal: 16,
     paddingTop: 10,
@@ -641,11 +653,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#E5E5EA',
   },
+  filtersPanelDesktop: {
+    paddingHorizontal: 32,
+  },
 
   searchContainer: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#E5E5EA', borderRadius: 10,
     paddingHorizontal: 12, minHeight: 52,
+  },
+  searchContainerDesktop: {
+    maxWidth: 600,
   },
   searchIcon: { marginRight: 8 },
   searchInput: {
@@ -679,7 +697,9 @@ const styles = StyleSheet.create({
   filterChipText: { fontSize: 13, color: '#555' },
   filterChipTextActive: { color: '#fff', fontWeight: '600' },
   contactCount: { fontSize: 13, color: '#8E8E93', marginHorizontal: 16, marginTop: 8, marginBottom: 4 },
+  contactCountDesktop: { marginHorizontal: 32 },
   listContent: { paddingBottom: 100 },
+  listContentDesktop: { paddingBottom: 120 },
   emptyContainer: { flex: 1, alignItems: 'center', marginTop: 60 },
   emptyText: { fontSize: 16, color: '#8E8E93' },
 
@@ -688,8 +708,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12, paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#ccc',
   },
+  contactItemDesktop: {
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+  },
   contactInfo: { flex: 1, justifyContent: 'center' },
   contactName: { fontSize: 17, color: '#000' },
+  contactNameDesktop: { fontSize: 18 },
   contactZodiacDesc: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
   contactAge: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
   contactAchievement: { fontSize: 13, color: '#007AFF', marginTop: 2 },
@@ -702,6 +727,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF', alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5,
+  },
+  fabDesktop: {
+    right: 24,
+    width: 60, height: 60, borderRadius: 30,
   },
 
   sortModal: {

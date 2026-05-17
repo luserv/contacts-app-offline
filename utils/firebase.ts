@@ -4,12 +4,12 @@ import { getFirestore } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDn7mY4PTcZVjVX5tZ8a-Oy5vcewxt5D7o",
-  authDomain: "c0ntacts.firebaseapp.com",
-  projectId: "c0ntacts",
-  storageBucket: "c0ntacts.firebasestorage.app",
-  messagingSenderId: "461026464928",
-  appId: "1:461026464928:web:44b80777c8faf7ceb265c5",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? "AIzaSyDn7mY4PTcZVjVX5tZ8a-Oy5vcewxt5D7o",
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "c0ntacts.firebaseapp.com",
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? "c0ntacts",
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "c0ntacts.firebasestorage.app",
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "461026464928",
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? "1:461026464928:web:44b80777c8faf7ceb265c5",
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];

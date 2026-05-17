@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../../utils/authContext';
-import { downloadDB, uploadDB } from '../../utils/driveSync';
+import { checkBackupExists, downloadDB, uploadDB } from '../../utils/driveSync';
 import {
   exportDatabaseToFile,
   importDatabaseFromFile,
@@ -13,6 +13,7 @@ import {
   reloadDatabase,
   writeDatabaseFromBase64,
 } from '../../utils/db';
+import { useResponsive } from '../../utils/responsive';
 
 const PAYPAL_ME = process.env.EXPO_PUBLIC_PAYPAL_ME ?? 'https://paypal.me/TUUSUARIO';
 const LICENSE_PRICE = process.env.EXPO_PUBLIC_LICENSE_PRICE ?? '4.99';
@@ -29,15 +30,28 @@ export default function Config() {
   const [status, setStatus] = useState<string | null>(null);
   const [driveStatus, setDriveStatus] = useState<string | null>(null);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
+  const [hasBackup, setHasBackup] = useState<boolean | null>(null);
   const { contacts, fetchContacts, importVcf } = useContacts();
   const { t, lang, setLang } = useI18n();
   const { user, licensed, signIn, signOutUser, driveToken, refreshDriveToken } = useAuth();
   const router = useRouter();
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronFS;
+  const { isDesktop, r } = useResponsive();
 
   useEffect(() => {
     fetchContacts();
   }, []);
+
+  useEffect(() => {
+    if (!driveToken) { setHasBackup(null); return; }
+    let cancelled = false;
+    checkBackupExists(driveToken).then(exists => {
+      if (!cancelled) setHasBackup(exists);
+    }).catch(() => {
+      if (!cancelled) setHasBackup(false);
+    });
+    return () => { cancelled = true; };
+  }, [driveToken]);
 
   const handleExport = async () => {
     try {
@@ -219,6 +233,7 @@ export default function Config() {
       }
       await uploadDB(token, base64);
       setDriveStatus(t.drive.uploadSuccess);
+      setHasBackup(true);
     } catch (e: any) {
       if (e.message === 'TOKEN_EXPIRED') {
         const newToken = await refreshDriveToken();
@@ -232,6 +247,7 @@ export default function Config() {
             }
             await uploadDB(newToken, base64);
             setDriveStatus(t.drive.uploadSuccess);
+            setHasBackup(true);
           } catch {
             promptSignIn();
           }
@@ -268,8 +284,10 @@ export default function Config() {
         await reloadDatabase();
         await fetchContacts();
       } catch (e: any) {
-        if (e.message === 'NO_BACKUP') setDriveStatus(t.drive.notFound);
-        else if (e.message === 'TOKEN_EXPIRED') {
+        if (e.message === 'NO_BACKUP') {
+          setDriveStatus(t.drive.notFound);
+          setHasBackup(false);
+        } else if (e.message === 'TOKEN_EXPIRED') {
           const newToken = await refreshDriveToken();
           if (newToken) doRestore();
           else promptSignIn();
@@ -292,7 +310,7 @@ export default function Config() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
       {/* Idioma */}
       <View style={[styles.card, { marginBottom: 16 }]}>
         <Text style={styles.cardTitle}>{t.config.language}</Text>
@@ -424,10 +442,15 @@ export default function Config() {
               ? <ActivityIndicator color="#fff" />
               : <Text style={styles.buttonText}>{t.drive.upload}</Text>}
           </Pressable>
+          {hasBackup === false && (
+            <View style={[styles.statusBox, styles.statusBoxError, { marginBottom: 10 }]}>
+              <Text style={styles.statusText}>{t.drive.notFound}</Text>
+            </View>
+          )}
           <Pressable
-            style={[styles.button, styles.buttonDriveRestore, !!loadingOp && styles.buttonDisabled]}
+            style={[styles.button, styles.buttonDriveRestore, (!!loadingOp || hasBackup === false) && styles.buttonDisabled]}
             onPress={handleDriveRestore}
-            disabled={!!loadingOp}
+            disabled={!!loadingOp || hasBackup === false}
           >
             {loadingOp === 'restore'
               ? <ActivityIndicator color="#fff" />
@@ -452,6 +475,13 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 40,
+    maxWidth: 800,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  contentDesktop: {
+    paddingHorizontal: 32,
+    paddingVertical: 28,
   },
   card: {
     backgroundColor: '#fff',

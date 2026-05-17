@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
+import { useResponsive } from '../../utils/responsive';
 import {
   cancelAllBirthdayNotifications,
   getScheduledBirthdayCount,
@@ -32,6 +33,7 @@ const DAYS_OPTIONS = [0, 1, 2, 3, 7];
 export default function NotificationsScreen() {
   const { t } = useI18n();
   const { contacts, fetchContacts } = useContacts();
+  const { isDesktop, r } = useResponsive();
 
   const [settings, setSettings] = useState<BirthdayNotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
   const [hourText, setHourText] = useState('09');
@@ -171,7 +173,7 @@ export default function NotificationsScreen() {
     t.notificationsScreen.daysBeforeN(n);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
       <Text style={styles.headerDesc}>{t.notificationsScreen.desc}</Text>
 
       {!notificationsAvailable && (
@@ -295,7 +297,8 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2F2F7' },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 40, maxWidth: 800, width: '100%', alignSelf: 'center' },
+  contentDesktop: { paddingHorizontal: 32, paddingVertical: 28 },
   loaderContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F2F2F7' },
 
   headerDesc: { fontSize: 14, color: '#8E8E93', marginBottom: 16, lineHeight: 20 },

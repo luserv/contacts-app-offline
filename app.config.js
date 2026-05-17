@@ -1,21 +1,30 @@
-import 'dotenv/config';
+const dotenv = require('dotenv');
+const path = require('path');
+
+// Cargar .env como base (development / production)
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const APP_ENV = process.env.APP_ENV ?? 'development';
-const IS_PROD = APP_ENV === 'production';
 const IS_PREVIEW = APP_ENV === 'preview';
 
+// Preview sobreescribe con .env.preview
+if (IS_PREVIEW) {
+  dotenv.config({ path: path.join(__dirname, '.env.preview'), override: true });
+}
+
 const getAppName = () => {
-  if (IS_PROD) return "Contacts";
   if (IS_PREVIEW) return "Contacts (Preview)";
-  return "Contacts (Dev)";
+  return "Contacts";
 };
 
 const getPackageName = () => {
-  // Debe coincidir con un cliente en google-services.json. Solo tienes registrado
-  // com.luserv.c0ntacts en Firebase; .dev / .preview requieren apps extra en la consola
-  // y un JSON fusionado. Mismo ID en todos los APP_ENV: el nombre de la app (Dev/Preview)
-  // sigue diferenciando builds en el launcher.
+  if (IS_PREVIEW) return "com.luserv.contacts.preview";
   return "com.luserv.c0ntacts";
+};
+
+const getGoogleServicesFile = () => {
+  if (IS_PREVIEW) return "./google-services.preview.json";
+  return "./google-services.json";
 };
 
 export default {
@@ -24,7 +33,7 @@ export default {
     slug: "contacts-app-offline",
     version: "1.0.0",
     scheme: "contacts",
-    orientation: "portrait",
+    orientation: "default",
     platforms: ["android", "web"],
     icon: "./assets/images/icon.png",
     splash: {
@@ -34,7 +43,7 @@ export default {
     },
     android: {
       package: getPackageName(),
-      googleServicesFile: "./google-services.json",
+      googleServicesFile: getGoogleServicesFile(),
       adaptiveIcon: {
         foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#007AFF"
@@ -44,7 +53,7 @@ export default {
       [
         "react-native-google-mobile-ads",
         {
-          androidAppId: process.env.ADMOB_ANDROID_APP_ID || "ca-app-pub-3940256099942544~3347511713", // Test ID if missing
+          androidAppId: process.env.ADMOB_ANDROID_APP_ID || "ca-app-pub-3940256099942544~3347511713",
           iosAppId: process.env.ADMOB_IOS_APP_ID || "ca-app-pub-3940256099942544~1458002511",
         }
       ],

@@ -7,12 +7,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { displayName, MONTH_NAMES_EN, MONTH_NAMES_ES, parseBirthdate } from '../../utils/contactUtils';
 import { useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
+import { useResponsive } from '../../utils/responsive';
 
 interface BirthdayEntry {
   contact_id: string;
@@ -31,7 +31,7 @@ export default function CalendarScreen() {
   const { lang } = useI18n();
   const { contacts } = useContacts();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width, isDesktop, r } = useResponsive();
 
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -81,7 +81,7 @@ export default function CalendarScreen() {
     else setViewMonth(m => m + 1);
   };
 
-  const cellSize = Math.floor((width - 24) / 7);
+  const cellSize = Math.floor(Math.min(width, 600) / 7);
 
   const cells: (number | null)[] = [
     ...Array(firstDow).fill(null),
@@ -107,7 +107,7 @@ export default function CalendarScreen() {
   const selectedBirthdays = selectedDay ? getBirthdays(selectedDay) : [];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%' }]}>
       <View style={styles.header}>
         <Pressable onPress={prevMonth} style={styles.navBtn} hitSlop={10}>
           <ChevronLeft size={22} color="#333" />

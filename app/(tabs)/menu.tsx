@@ -2,52 +2,59 @@ import { useRouter } from 'expo-router';
 import { Bell, ChevronRight, Settings } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../../utils/i18n';
+import { useResponsive } from '../../utils/responsive';
 
 export default function MenuScreen() {
   const router = useRouter();
   const { t, lang } = useI18n();
+  const { isDesktop, r } = useResponsive();
 
   return (
-    <View style={styles.container}>
-      <Pressable style={styles.menuItem} onPress={() => router.push('/notifications')}>
-        <View style={styles.left}>
-          <View style={styles.iconWrap}>
-            <Bell size={18} color="#007AFF" />
+    <View style={[styles.container, isDesktop && styles.containerDesktop]}>
+      <View style={[styles.inner, isDesktop && styles.innerDesktop]}>
+        <Pressable style={styles.menuItem} onPress={() => router.push('/notifications')}>
+          <View style={styles.left}>
+            <View style={styles.iconWrap}>
+              <Bell size={18} color="#007AFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.itemTitle}>{t.tabs.notifications}</Text>
+              <Text style={styles.itemSubtitle}>
+                {lang === 'es'
+                  ? 'Personaliza los recordatorios de cumpleaños'
+                  : 'Customize birthday reminders'}
+              </Text>
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.itemTitle}>{t.tabs.notifications}</Text>
-            <Text style={styles.itemSubtitle}>
-              {lang === 'es'
-                ? 'Personaliza los recordatorios de cumpleaños'
-                : 'Customize birthday reminders'}
-            </Text>
-          </View>
-        </View>
-        <ChevronRight size={18} color="#8E8E93" />
-      </Pressable>
+          <ChevronRight size={18} color="#8E8E93" />
+        </Pressable>
 
-      <Pressable style={[styles.menuItem, { marginTop: 12 }]} onPress={() => router.push('/config')}>
-        <View style={styles.left}>
-          <View style={styles.iconWrap}>
-            <Settings size={18} color="#007AFF" />
+        <Pressable style={[styles.menuItem, { marginTop: r(12, 12, 16) }]} onPress={() => router.push('/config')}>
+          <View style={styles.left}>
+            <View style={styles.iconWrap}>
+              <Settings size={18} color="#007AFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.itemTitle}>{t.config.title}</Text>
+              <Text style={styles.itemSubtitle}>
+                {lang === 'es'
+                  ? 'Idioma, respaldos y Google Drive'
+                  : 'Language, backups and Google Drive'}
+              </Text>
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.itemTitle}>{t.config.title}</Text>
-            <Text style={styles.itemSubtitle}>
-              {lang === 'es'
-                ? 'Idioma, respaldos y Google Drive'
-                : 'Language, backups and Google Drive'}
-            </Text>
-          </View>
-        </View>
-        <ChevronRight size={18} color="#8E8E93" />
-      </Pressable>
+          <ChevronRight size={18} color="#8E8E93" />
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 16 },
+  containerDesktop: { alignItems: 'center' },
+  inner: { flex: 1 },
+  innerDesktop: { maxWidth: 800, width: '100%' },
   menuItem: {
     backgroundColor: '#F7F8FA',
     borderRadius: 14,

@@ -3,11 +3,13 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 
-// Cargar variables de entorno desde .env (sin depender de dotenv)
-// En producción el .env se copia a resourcesPath via extraResources
+// Cargar variables de entorno (sin depender de dotenv)
+// development/production usan .env; preview usa .env.preview
 try {
-  const devPath = path.join(__dirname, '..', '.env');
-  const prodPath = path.join(process.resourcesPath, '.env');
+  const isPreview = process.env.APP_ENV === 'preview';
+  const envName = isPreview ? '.env.preview' : '.env';
+  const devPath = path.join(__dirname, '..', envName);
+  const prodPath = path.join(process.resourcesPath, envName);
   const dotenvPath = fs.existsSync(prodPath) ? prodPath : devPath;
   if (fs.existsSync(dotenvPath)) {
     const lines = fs.readFileSync(dotenvPath, 'utf8').split(/\r?\n/);

@@ -14,6 +14,7 @@ import RelationshipsCard from '../../components/contact/RelationshipsCard';
 import UrlsCard from '../../components/contact/UrlsCard';
 import { ContactBankAccount, ContactEmail, ContactKeyword, ContactNote, ContactOrganization, ContactPhone, ContactUrl, IdentityCard, Relationship, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
+import { useResponsive } from '../../utils/responsive';
 import { calcularEdad, ContactDetail, displayName, EXCLUDED_FIELDS, formatBirthdate, getZodiacKey, getZodiacSymbol } from '../../utils/contactUtils';
 
 export default function ContactDetailScreen() {
@@ -21,6 +22,7 @@ export default function ContactDetailScreen() {
   const contactId = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
   const { t, lang } = useI18n();
+  const { isDesktop, r } = useResponsive();
   const { getContact, getIdentityCards, getRelationships, getContactOrganizations, getContactPhones, getContactEmails, getContactKeywords, getBankAccounts, getContactNotes, getContactUrls, fetchContacts, deleteContact } = useContacts();
 
   const [contact, setContact] = useState<ContactDetail | null>(null);
@@ -141,7 +143,7 @@ export default function ContactDetailScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerTitle: `${contact.first_name ?? ''} ${contact.surname ?? ''}`.trim() }} />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
 
         {/* Encabezado */}
         <View style={styles.headerContainer}>
@@ -217,7 +219,8 @@ export default function ContactDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2F2F7' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 40, maxWidth: 900, width: '100%', alignSelf: 'center' },
+  contentDesktop: { paddingHorizontal: 32, paddingVertical: 28 },
 
   headerContainer: { alignItems: 'center', marginBottom: 24 },
   zodiacRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -18,7 +18,8 @@
     "main": "electron/main.js"
   },
   "extraResources": [
-    { "from": ".env", "to": ".env" }
+    { "from": ".env", "to": ".env" },
+    { "from": ".env.preview", "to": ".env.preview" }
   ],
   "npmRebuild": false,
   "asar": {

@@ -137,6 +137,17 @@ export async function uploadDB(token: string, base64: string): Promise<void> {
   });
 }
 
+/** Verifica si existe al menos un backup en Drive. */
+export async function checkBackupExists(token: string): Promise<boolean> {
+  const folderId = await getOrCreateFolderPath(token);
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false`);
+  const data = await driveJSON(
+    `${DRIVE_API}?q=${q}&orderBy=createdTime desc&fields=files(id)&pageSize=1`,
+    token
+  );
+  return (data.files?.length ?? 0) > 0;
+}
+
 /** Descarga el backup más reciente desde contacts/db/ en Google Drive. Retorna base64. */
 export async function downloadDB(token: string): Promise<string> {
   const folderId = await getOrCreateFolderPath(token);
