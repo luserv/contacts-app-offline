@@ -40,15 +40,17 @@ export default function TabsLayout() {
         tabBarLabel: t.tabs.menu,
         tabBarIcon: ({ color, size }) => <Ionicons name="menu" size={size} color={color} />,
       }} />
+      <Tabs.Screen name="sync" options={{
+        href: null,
+        headerTitle: t.tabs.sync,
+      }} />
       <Tabs.Screen name="config" options={{
         href: null,
         headerTitle: t.config.title,
-        tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
       }} />
       <Tabs.Screen name="notifications" options={{
         href: null,
         headerTitle: t.tabs.notifications,
-        tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} />,
       }} />
     </Tabs>
   );

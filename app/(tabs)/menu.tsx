@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Bell, ChevronRight, Settings } from 'lucide-react-native';
+import { Bell, ChevronRight, RefreshCw, Settings } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../../utils/i18n';
 import { useResponsive } from '../../utils/responsive';
@@ -29,6 +29,23 @@ export default function MenuScreen() {
           <ChevronRight size={18} color="#8E8E93" />
         </Pressable>
 
+        <Pressable style={[styles.menuItem, { marginTop: r(12, 12, 16) }]} onPress={() => router.push('/sync')}>
+          <View style={styles.left}>
+            <View style={[styles.iconWrap, { backgroundColor: '#E8F5E9' }]}>
+              <RefreshCw size={18} color="#34A853" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.itemTitle}>{t.tabs.sync}</Text>
+              <Text style={styles.itemSubtitle}>
+                {lang === 'es'
+                  ? 'Respaldo, restauración y Google Drive'
+                  : 'Backup, restore and Google Drive'}
+              </Text>
+            </View>
+          </View>
+          <ChevronRight size={18} color="#8E8E93" />
+        </Pressable>
+
         <Pressable style={[styles.menuItem, { marginTop: r(12, 12, 16) }]} onPress={() => router.push('/config')}>
           <View style={styles.left}>
             <View style={styles.iconWrap}>
@@ -38,8 +55,8 @@ export default function MenuScreen() {
               <Text style={styles.itemTitle}>{t.config.title}</Text>
               <Text style={styles.itemSubtitle}>
                 {lang === 'es'
-                  ? 'Idioma, respaldos y Google Drive'
-                  : 'Language, backups and Google Drive'}
+                  ? 'Idioma, cuenta y licencia'
+                  : 'Language, account and license'}
               </Text>
             </View>
           </View>
