@@ -4,12 +4,9 @@ const path = require('path');
 const fs = require('fs');
 
 // Cargar variables de entorno (sin depender de dotenv)
-// development/production usan .env; preview usa .env.preview
 try {
-  const isPreview = process.env.APP_ENV === 'preview';
-  const envName = isPreview ? '.env.preview' : '.env';
-  const devPath = path.join(__dirname, '..', envName);
-  const prodPath = path.join(process.resourcesPath, envName);
+  const devPath = path.join(__dirname, '..', '.env');
+  const prodPath = path.join(process.resourcesPath, '.env');
   const dotenvPath = fs.existsSync(prodPath) ? prodPath : devPath;
   if (fs.existsSync(dotenvPath)) {
     const lines = fs.readFileSync(dotenvPath, 'utf8').split(/\r?\n/);
