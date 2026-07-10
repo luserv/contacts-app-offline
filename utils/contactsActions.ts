@@ -7,7 +7,7 @@ import type { ContactsContextType } from './contactsTypes';
 
 export function createContactsActions(
     params: CreateContactsActionsParams
-): Omit<ContactsContextType, 'contacts'> {
+): Omit<ContactsContextType, 'contacts' | 'contactsLoading' | 'syncing' | 'syncEnabled' | 'lastSyncAt' | 'setSyncEnabled' | 'syncNow'> {
     return {
         ...createContactsCoreActions(params),
         ...createContactsRelationshipActions(),

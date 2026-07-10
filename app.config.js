@@ -16,15 +16,24 @@ export default {
       package: "com.luserv.c0ntacts",
       googleServicesFile: "./google-services.json",
       adaptiveIcon: {
-        foregroundImage: "./assets/images/icon.png",
-        backgroundColor: "#007AFF"
+        foregroundImage: "./assets/images/android-icon-foreground.png",
+        backgroundImage: "./assets/images/android-icon-background.png",
+        monochromeImage: "./assets/images/android-icon-monochrome.png"
       }
     },
     plugins: [
       [
+        "expo-build-properties",
+        {
+          android: {
+            abis: ["arm64-v8a"],
+          },
+        },
+      ],
+      [
         "react-native-google-mobile-ads",
         {
-          androidAppId: process.env.ADMOB_ANDROID_APP_ID || "ca-app-pub-3940256099942544~3347511713",
+          androidAppId: process.env.EXPO_PUBLIC_ADMOB_APP_ID || "ca-app-pub-3940256099942544~3347511713",
           iosAppId: process.env.ADMOB_IOS_APP_ID || "ca-app-pub-3940256099942544~1458002511",
         }
       ],

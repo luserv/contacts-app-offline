@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactNote, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
-import { sharedStyles as s } from './contactStyles';
+import { useSharedStyles } from './contactStyles';
 
 interface Props {
   contactId: string;
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function NotesCard({ contactId, initialNotes }: Props) {
+  const s = useSharedStyles();
   const { t } = useI18n();
   const { getContactNotes, addContactNote, removeContactNote } = useContacts();
 
@@ -41,32 +42,34 @@ export default function NotesCard({ contactId, initialNotes }: Props) {
 
   return (
     <>
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Text style={s.cardTitle}>{t.notes.title}</Text>
-          <Pressable style={s.addButton} onPress={openAdd}>
-            <Text style={s.addButtonText}>{t.common.add}</Text>
-          </Pressable>
-        </View>
-
-        {notes.length === 0 ? (
-          <Text style={s.emptyText}>{t.notes.empty}</Text>
-        ) : (
-          notes.map((note, i) => (
+      {notes.length === 0 ? (
+        <Pressable style={s.addRow} onPress={openAdd}>
+          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <Text style={s.addRowLabel}>{t.notes.title}</Text>
+        </Pressable>
+      ) : (
+        <View style={s.card}>
+          <View style={s.cardHeader}>
+            <Text style={s.cardTitle}>{t.notes.title}</Text>
+            <Pressable style={s.addButton} onPress={openAdd} accessibilityLabel={t.notes.addTitle}>
+              <Text style={s.addButtonText}>{t.common.add}</Text>
+            </Pressable>
+          </View>
+          {notes.map((note, i) => (
             <View key={note.id} style={[styles.row, i === notes.length - 1 && styles.lastRow]}>
               <Text style={styles.noteText}>{note.note}</Text>
-              <Pressable onPress={() => handleRemove(note)} style={s.removeBtn} hitSlop={6}>
+              <Pressable onPress={() => handleRemove(note)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
               </Pressable>
             </View>
-          ))
-        )}
-      </View>
+          ))}
+        </View>
+      )}
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={s.modalOverlay}>
-            <View style={s.modalContainer}>
+            <View style={s.modalContainer} accessibilityViewIsModal={true}>
               <Text style={s.modalTitle}>{t.notes.addTitle}</Text>
               <Text style={s.fieldLabel}>
                 {t.notes.noteLabel} <Text style={s.required}>{t.common.required}</Text>

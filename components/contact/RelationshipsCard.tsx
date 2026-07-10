@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Relationship, RelationshipType, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
-import { sharedStyles as s } from './contactStyles';
+import { useSharedStyles } from './contactStyles';
 
 interface Props {
   contactId: string;
@@ -11,8 +11,9 @@ interface Props {
 }
 
 export default function RelationshipsCard({ contactId, initialRelationships, onNavigate }: Props) {
+  const s = useSharedStyles();
   const { t } = useI18n();
-  const { getRelationships, addRelationship, removeRelationship, getRelationshipTypes, contacts, fetchContacts } = useContacts();
+  const { getRelationships, addRelationship, removeRelationship, getRelationshipTypes, contacts } = useContacts();
 
   const [relationships, setRelationships] = useState<Relationship[]>(initialRelationships);
   const [modalVisible, setModalVisible] = useState(false);
@@ -24,7 +25,6 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
 
   const openModal = async () => {
     const types = await getRelationshipTypes();
-    await fetchContacts();
     setRelationshipTypes(types);
     setSelectedTypeId(null);
     setSelectedContactId(null);
@@ -75,18 +75,20 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
 
   return (
     <>
+      {relationships.length === 0 ? (
+        <Pressable style={s.addRow} onPress={openModal}>
+          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <Text style={s.addRowLabel}>{t.relationships.title}</Text>
+        </Pressable>
+      ) : (
       <View style={s.card}>
         <View style={s.cardHeader}>
           <Text style={s.cardTitle}>{t.relationships.title}</Text>
-          <Pressable style={s.addButton} onPress={openModal}>
+          <Pressable style={s.addButton} onPress={openModal} accessibilityLabel={t.relationships.title}>
             <Text style={s.addButtonText}>{t.common.add}</Text>
           </Pressable>
         </View>
-
-        {relationships.length === 0 ? (
-          <Text style={s.emptyText}>{t.relationships.empty}</Text>
-        ) : (
-          relationships.map(rel => (
+        {relationships.map(rel => (
             <View key={rel.id} style={styles.relRow}>
               <Pressable style={styles.relAvatar} onPress={() => onNavigate(rel.related_contact_id)}>
                 <Text style={styles.relAvatarText}>
@@ -97,18 +99,19 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
                 <Text style={styles.relName}>{rel.first_name} {rel.surname}</Text>
                 <Text style={styles.relType}>{rel.label}</Text>
               </Pressable>
-              <Pressable onPress={() => handleRemove(rel)} style={s.removeBtn}>
+              <Pressable onPress={() => handleRemove(rel)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
               </Pressable>
             </View>
           ))
-        )}
+        }
       </View>
+      )}
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={s.modalOverlay}>
-            <View style={s.modalContainer}>
+            <View style={s.modalContainer} accessibilityViewIsModal={true}>
             {step === 'type' ? (
               <>
                 <Text style={s.modalTitle}>{t.relationships.whatRelationship}</Text>

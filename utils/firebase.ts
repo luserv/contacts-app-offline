@@ -1,5 +1,5 @@
 import { getApps, initializeApp } from 'firebase/app';
-import { browserLocalPersistence, getAuth, initializeAuth } from 'firebase/auth';
+import { browserLocalPersistence, browserPopupRedirectResolver, getAuth, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
@@ -18,7 +18,7 @@ function createAuth() {
   // Si ya fue inicializado (hot reload), reusar
   try {
     if (Platform.OS === 'web') {
-      return initializeAuth(app, { persistence: browserLocalPersistence });
+      return initializeAuth(app, { persistence: browserLocalPersistence, popupRedirectResolver: browserPopupRedirectResolver });
     } else {
       const { getReactNativePersistence } = require('firebase/auth');
       const AsyncStorage = require('@react-native-async-storage/async-storage').default;

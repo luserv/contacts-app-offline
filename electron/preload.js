@@ -27,6 +27,8 @@ contextBridge.exposeInMainWorld('electronNotif', {
 contextBridge.exposeInMainWorld('electronDrive', {
   readDBAsBase64: () => ipcRenderer.invoke('db:readAsBase64'),
   writeDBFromBase64: (base64) => ipcRenderer.invoke('db:writeFromBase64', base64),
+  mergeDBFromBase64: (base64) => ipcRenderer.invoke('db:mergeFromBase64', base64),
+  dbSignature: () => ipcRenderer.invoke('db:signature'),
 });
 
 contextBridge.exposeInMainWorld('electronAuth', {

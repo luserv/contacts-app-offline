@@ -140,6 +140,21 @@ El APK queda en `android/app/build/outputs/apk/release/app-release.apk`.
 
 > Para firmar el APK con tu keystore configura las variables `KEYSTORE_*` en `android/gradle.properties` o usa EAS Build que gestiona la firma automáticamente.
 
+### Optimizar tamaño del APK
+
+Por defecto el APK incluye librerías nativas para 4 arquitecturas (~135 MB). En `android/gradle.properties` puedes filtrar solo las que necesites:
+
+```properties
+# Solo arm64 (99% de dispositivos modernos) → ~61 MB
+reactNativeArchitectures=arm64-v8a
+# O solo arm64 + armeabi-v7a (incluye 32-bit) → ~78 MB
+#reactNativeArchitectures=armeabi-v7a,arm64-v8a
+# Todas las arquitecturas (por defecto) → ~135 MB
+#reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
+```
+
+Esto aplica tanto a EAS Build como a compilación local con Gradle. Las arquitecturas `x86` y `x86_64` solo son necesarias para emuladores y tablets Intel antiguos.
+
 ---
 
 ## Correr en escritorio (Electron)

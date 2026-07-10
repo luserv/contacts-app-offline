@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactBankAccount, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
-import { sharedStyles as s } from './contactStyles';
+import { useSharedStyles } from './contactStyles';
 
 interface Props {
   contactId: string;
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function BankAccountCard({ contactId, initialAccounts }: Props) {
+  const s = useSharedStyles();
   const { t } = useI18n();
   const { getBankAccounts, addBankAccount, updateBankAccount, deleteBankAccount, searchBanks, searchAccountTypes } = useContacts();
 
@@ -103,18 +104,20 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
 
   return (
     <>
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Text style={s.cardTitle}>{t.bankAccounts.title}</Text>
-          <Pressable style={s.addButton} onPress={openAddModal}>
-            <Text style={s.addButtonText}>{t.common.add}</Text>
-          </Pressable>
-        </View>
-
-        {accounts.length === 0 ? (
-          <Text style={s.emptyText}>{t.bankAccounts.empty}</Text>
-        ) : (
-          accounts.map(acc => (
+      {accounts.length === 0 ? (
+        <Pressable style={s.addRow} onPress={openAddModal}>
+          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <Text style={s.addRowLabel}>{t.bankAccounts.title}</Text>
+        </Pressable>
+      ) : (
+        <View style={s.card}>
+          <View style={s.cardHeader}>
+            <Text style={s.cardTitle}>{t.bankAccounts.title}</Text>
+            <Pressable style={s.addButton} onPress={openAddModal} accessibilityLabel={t.bankAccounts.addTitle}>
+              <Text style={s.addButtonText}>{t.common.add}</Text>
+            </Pressable>
+          </View>
+          {accounts.map(acc => (
             <View key={acc.id} style={styles.row}>
               <View style={styles.info}>
                 {acc.bank_name ? <Text style={styles.bankName}>{acc.bank_name}</Text> : null}
@@ -122,21 +125,21 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
                 {acc.account_type ? <Text style={styles.meta}>{acc.account_type}</Text> : null}
                 {acc.label ? <Text style={styles.meta}>{acc.label}</Text> : null}
               </View>
-              <Pressable onPress={() => openEditModal(acc)} style={styles.editBtn}>
+              <Pressable onPress={() => openEditModal(acc)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
                 <Text style={styles.editBtnText}>{t.common.edit}</Text>
               </Pressable>
-              <Pressable onPress={() => handleRemove(acc)} style={s.removeBtn}>
+              <Pressable onPress={() => handleRemove(acc)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
               </Pressable>
             </View>
-          ))
-        )}
-      </View>
+          ))}
+        </View>
+      )}
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={s.modalOverlay}>
-            <View style={s.modalContainer}>
+            <View style={s.modalContainer} accessibilityViewIsModal={true}>
               <Text style={s.modalTitle}>{editingId !== null ? t.common.edit : t.bankAccounts.addTitle}</Text>
               <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -213,7 +216,7 @@ const styles = StyleSheet.create({
   bankName: { fontSize: 12, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
   accountNumber: { fontSize: 16, color: '#000', fontWeight: '500' },
   meta: { fontSize: 13, color: '#555', marginTop: 2 },
-  editBtn: { paddingHorizontal: 8, paddingVertical: 8 },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   editBtnText: { fontSize: 14, color: '#007AFF' },
   suggestions: {
     borderWidth: 1, borderColor: '#E5E5EA', borderRadius: 8,

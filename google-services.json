@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "461026464928",
+    "project_id": "c0ntacts",
+    "storage_bucket": "c0ntacts.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:461026464928:android:8ce079c01286f553b265c5",
+        "android_client_info": {
+          "package_name": "com.luserv.c0ntacts"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "461026464928-ndlctdfeimjv0vkf8a1h87mqlrts4bjp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.luserv.c0ntacts",
+            "certificate_hash": "62e1a6c9bf1429ed7bced3242e8490bca4c4040b"
+          }
+        },
+        {
+          "client_id": "461026464928-uqthqedb0oekcl2rgch1ggq9rkf6f3gq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl4G_KR17l32v9b1EPe3Wjai0Uxev6NZI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "461026464928-uqthqedb0oekcl2rgch1ggq9rkf6f3gq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -6,18 +6,21 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { auth } from '../utils/firebase';
 import { useAuth } from '../utils/authContext';
+import { useTheme } from '../utils/theme';
+import { useI18n } from '../utils/i18n';
 
-const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID!;
+const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
 
 GoogleSignin.configure({
-  webClientId: WEB_CLIENT_ID,
+  ...(WEB_CLIENT_ID ? { webClientId: WEB_CLIENT_ID, offlineAccess: true } : {}),
   scopes: ['profile', 'email', 'https://www.googleapis.com/auth/drive.file'],
-  offlineAccess: true,
 });
 
 export default function LoginScreen() {
+  const { t } = useI18n();
   const { user, isGuest, loading, continueAsGuest, setDriveToken } = useAuth();
   const router = useRouter();
+  const { colors } = useTheme();
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -43,9 +46,9 @@ export default function LoginScreen() {
       } else if (e.code === statusCodes.IN_PROGRESS) {
         // ya hay un sign-in en curso
       } else if (e.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        setError('Google Play Services not available.');
+        setError(t.login.playServicesError);
       } else {
-        setError(e.message ?? 'Error signing in');
+        setError(e.message ?? t.login.signInError);
       }
     } finally {
       setBusy(false);
@@ -57,28 +60,28 @@ export default function LoginScreen() {
   };
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#007AFF" /></View>;
+    return <View style={[styles.center, { backgroundColor: colors.bg }]}><ActivityIndicator size="large" color={colors.accent} /></View>;
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.iconPlaceholder}>
+    <View style={[styles.container, { backgroundColor: colors.accent }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacityMedium }]}>
+        <View style={[styles.iconPlaceholder, { backgroundColor: colors.accentSubtle }]}>
           <Text style={styles.iconText}>👥</Text>
         </View>
-        <Text style={styles.title}>Contacts</Text>
-        <Text style={styles.subtitle}>Your personal agenda, always with you.</Text>
-        <Pressable style={[styles.googleBtn, busy && styles.btnDisabled]} onPress={handleSignIn} disabled={busy}>
+        <Text style={[styles.title, { color: colors.text }]}>{t.login.title}</Text>
+        <Text style={styles.subtitle}>{t.login.subtitle}</Text>
+        <Pressable style={[styles.googleBtn, { backgroundColor: colors.accent }, busy && styles.btnDisabled]} onPress={handleSignIn} disabled={busy}>
           {busy
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.googleBtnText}>🔑 Continue with Google</Text>}
+            : <Text style={styles.googleBtnText}>{t.login.continueWithGoogle}</Text>}
         </Pressable>
-        <Text style={styles.googleHint}>Enable automatic backup on Google Drive</Text>
+        <Text style={styles.googleHint}>{t.login.enableBackup}</Text>
         <Pressable style={styles.guestBtn} onPress={handleGuest}>
-          <Text style={styles.guestBtnText}>Continue without signing in</Text>
+          <Text style={[styles.guestBtnText, { color: colors.accent }]}>{t.login.continueAsGuest}</Text>
         </Pressable>
         {error && <Text style={styles.error}>{error}</Text>}
-        <Text style={styles.disclaimer}>By signing in you agree that your license data will be stored securely.</Text>
+        <Text style={styles.disclaimer}>{t.login.disclaimer}</Text>
       </View>
     </View>
   );

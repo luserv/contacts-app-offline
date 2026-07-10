@@ -1,5 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
   Modal,
@@ -11,8 +11,9 @@ import {
 } from 'react-native';
 import { displayName, MONTH_NAMES_EN, MONTH_NAMES_ES, parseBirthdate } from '../../utils/contactUtils';
 import { useContacts } from '../../utils/context';
-import { useI18n } from '../../utils/i18n';
+import { type T, useI18n } from '../../utils/i18n';
 import { useResponsive } from '../../utils/responsive';
+import { useTheme } from '../../utils/theme';
 
 interface BirthdayEntry {
   contact_id: string;
@@ -22,16 +23,16 @@ interface BirthdayEntry {
   birthYear: number;
 }
 
-const DAY_HEADERS = {
-  es: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
-  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-};
+const DAY_HEADERS = (t: T['calendar']): string[] => [
+  t.dowSun, t.dowMon, t.dowTue, t.dowWed, t.dowThu, t.dowFri, t.dowSat,
+];
 
 export default function CalendarScreen() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { contacts } = useContacts();
   const router = useRouter();
-  const { width, isDesktop, r } = useResponsive();
+  const { width, isDesktop, isTablet, r } = useResponsive();
+  const { colors } = useTheme();
 
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -107,19 +108,24 @@ export default function CalendarScreen() {
   const selectedBirthdays = selectedDay ? getBirthdays(selectedDay) : [];
 
   return (
-    <View style={[styles.container, isDesktop && { maxWidth: 800, alignSelf: 'center', width: '100%' }]}>
-      <View style={styles.header}>
+    <View style={[
+      styles.container,
+      isTablet && !isDesktop && { maxWidth: 680, alignSelf: 'center' as const, width: '100%' },
+      isDesktop && { maxWidth: 800, alignSelf: 'center' as const, width: '100%' },
+      { backgroundColor: colors.bg },
+    ]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.separator }]}>
         <Pressable onPress={prevMonth} style={styles.navBtn} hitSlop={10}>
-          <ChevronLeft size={22} color="#333" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
-        <Text style={styles.monthTitle}>{monthLabel(viewMonth)} {viewYear}</Text>
+        <Text style={[styles.monthTitle, { color: colors.text }]}>{monthLabel(viewMonth)} {viewYear}</Text>
         <Pressable onPress={nextMonth} style={styles.navBtn} hitSlop={10}>
-          <ChevronRight size={22} color="#333" />
+          <Ionicons name="chevron-forward" size={22} color={colors.text} />
         </Pressable>
       </View>
 
-      <View style={styles.dowRow}>
-        {DAY_HEADERS[lang].map(d => (
+      <View style={[styles.dowRow, { backgroundColor: colors.surface, borderBottomColor: colors.separator }]}>
+        {DAY_HEADERS(t.calendar).map(d => (
           <View key={d} style={[styles.dowCell, { width: cellSize }]}>
             <Text style={styles.dowText}>{d}</Text>
           </View>
@@ -142,23 +148,23 @@ export default function CalendarScreen() {
                   style={[
                     styles.cell,
                     { width: cellSize, height: cellSize },
-                    todayCell && styles.cellToday,
-                    hasBday && !todayCell && styles.cellHasBday,
+                    todayCell && { backgroundColor: colors.accent },
+                    hasBday && !todayCell && { backgroundColor: colors.cardBirthday, borderWidth: 1, borderColor: colors.cardBirthdayBorder },
                   ]}
                   onPress={() => openDay(day)}
-                  android_ripple={hasBday ? { color: '#f5a62340', borderless: true } : undefined}
+                  android_ripple={hasBday ? { color: `${colors.birthdayDot}40`, borderless: true } : undefined}
                 >
                   <Text style={[
                     styles.dayNum,
-                    todayCell && styles.dayNumToday,
-                    !hasBday && styles.dayNumEmpty,
+                    { color: hasBday || todayCell ? colors.text : colors.textTertiary },
+                    todayCell && { color: '#FFFFFF' },
                   ]}>
                     {day}
                   </Text>
                   {hasBday && (
                     <View style={styles.dotsRow}>
                       {birthdays.slice(0, 3).map((_, i) => (
-                        <View key={i} style={[styles.dot, todayCell && styles.dotToday]} />
+                        <View key={i} style={[styles.dot, { backgroundColor: todayCell ? colors.birthdayDotToday : colors.birthdayDot }]} />
                       ))}
                     </View>
                   )}
@@ -169,12 +175,10 @@ export default function CalendarScreen() {
         ))}
       </ScrollView>
 
-      <View style={styles.legend}>
-        <View style={styles.legendDot} />
-        <Text style={styles.legendText}>
-          {lang === 'es'
-            ? `Tiene cumpleaños (${monthlyBirthdaysTotal})`
-            : `Has birthdays (${monthlyBirthdaysTotal})`}
+      <View style={[styles.legend, { borderTopColor: colors.separator, backgroundColor: colors.surface }]}>
+        <View style={[styles.legendDot, { backgroundColor: colors.birthdayDot }]} />
+        <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+          {t.calendar.hasBirthdays(monthlyBirthdaysTotal)}
         </Text>
       </View>
 
@@ -184,15 +188,15 @@ export default function CalendarScreen() {
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
-          <Pressable style={styles.sheet} onPress={e => e.stopPropagation()}>
-            <View style={styles.sheetHandle} />
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>
+        <Pressable style={[styles.overlay, { backgroundColor: colors.overlay }]} onPress={() => setModalVisible(false)}>
+          <Pressable style={[styles.sheet, { backgroundColor: colors.surface }]} onPress={e => e.stopPropagation()}>
+            <View style={[styles.sheetHandle, { backgroundColor: colors.separator }]} />
+            <View style={[styles.sheetHeader, { borderBottomColor: colors.separatorFine }]}>
+              <Text style={[styles.sheetTitle, { color: colors.text }]}>
                 {selectedDay} {selectedDay ? monthLabel(viewMonth) : ''}
               </Text>
               <Pressable onPress={() => setModalVisible(false)} hitSlop={10}>
-                <X size={20} color="#666" />
+                <Ionicons name="close" size={20} color={colors.textSecondary} />
               </Pressable>
             </View>
             <ScrollView>
@@ -201,19 +205,17 @@ export default function CalendarScreen() {
                 return (
                   <Pressable
                     key={e.contact_id}
-                    style={styles.contactRow}
+                    style={[styles.contactRow, { borderBottomColor: colors.separatorFine }]}
                     onPress={() => { setModalVisible(false); router.push(`/contact/${e.contact_id}`); }}
                   >
                     <Text style={styles.cakeEmoji}>🎂</Text>
                     <View style={styles.contactInfo}>
-                      <Text style={styles.contactName} numberOfLines={1}>{displayName(e)}</Text>
-                      <Text style={styles.contactAge}>
-                        {lang === 'es'
-                          ? `Cumple ${age} año${age !== 1 ? 's' : ''}`
-                          : `Turns ${age} year${age !== 1 ? 's' : ''}`}
+                      <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{displayName(e)}</Text>
+                      <Text style={[styles.contactAge, { color: colors.textSecondary }]}>
+                        {t.calendar.turnsAge(age)}
                       </Text>
                     </View>
-                    <ChevronRight size={16} color="#ccc" />
+                    <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
                   </Pressable>
                 );
               })}

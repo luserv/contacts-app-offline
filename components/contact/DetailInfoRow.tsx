@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../../utils/theme';
 
 interface DetailInfoRowProps {
   label: string;
@@ -8,11 +9,12 @@ interface DetailInfoRowProps {
 }
 
 export default function DetailInfoRow({ label, value, helperText }: DetailInfoRowProps) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.infoRow}>
+    <View style={[styles.infoRow, { borderBottomColor: colors.separatorFine }]}>
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
-      {helperText ? <Text style={styles.helperText}>{helperText}</Text> : null}
+      <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
+      {helperText ? <Text style={[styles.helperText, { color: colors.accent }]}>{helperText}</Text> : null}
     </View>
   );
 }

@@ -122,6 +122,31 @@ export async function importDatabaseFromFile(sourcePath: string): Promise<void> 
   }
 }
 
+const SYNC_TABLES_NATIVE = [
+  'contact', 'contact_phone', 'contact_email', 'contact_note',
+  'contact_url', 'contact_bank_account', 'contact_relationship',
+  'contact_keyword', 'national_identity_card', 'contact_organization',
+];
+
+export async function exportDatabaseToBase64(): Promise<string> {
+  return readDatabaseAsBase64();
+}
+
+export async function mergeDatabaseFromBase64(base64: string): Promise<void> {
+  await writeDatabaseFromBase64(base64);
+}
+
+export async function getDatabaseSignature(): Promise<string> {
+  let total = 0;
+  for (const table of SYNC_TABLES_NATIVE) {
+    try {
+      const r = _db.getFirstSync<{ c: number }>(`SELECT COUNT(*) c FROM ${table}`);
+      if (r) total += r.c;
+    } catch {}
+  }
+  return String(total);
+}
+
 export async function readDatabaseAsBase64(): Promise<string> {
   const cacheDir = FileSystem.cacheDirectory ?? '';
   const tempPath = cacheDir.endsWith('/') ? `${cacheDir}contacts-drive-${Date.now()}.db` : `${cacheDir}/contacts-drive-${Date.now()}.db`;

@@ -1,3 +1,10 @@
+allowBuilds:
+  '@firebase/util': false
+  better-sqlite3: false
+  electron: true
+  electron-winstaller: false
+  protobufjs: false
+  unrs-resolver: false
 overrides:
   electron@<35.7.5: '>=35.7.5'
   electron@<38.8.6: '>=38.8.6'

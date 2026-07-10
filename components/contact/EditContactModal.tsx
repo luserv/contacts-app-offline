@@ -5,7 +5,7 @@ import Dropdown from '../Dropdown';
 import { MaritalStatus, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { ContactDetail, formatDate } from '../../utils/contactUtils';
-import { sharedStyles as s } from './contactStyles';
+import { useSharedStyles } from './contactStyles';
 
 interface Props {
   visible: boolean;
@@ -15,6 +15,7 @@ interface Props {
 }
 
 export default function EditContactModal({ visible, contact, onClose, onSaved }: Props) {
+  const s = useSharedStyles();
   const { t } = useI18n();
   const { getMaritalStatuses, updateContact, getContact } = useContacts();
   const insets = useSafeAreaInsets();
@@ -63,9 +64,12 @@ export default function EditContactModal({ visible, contact, onClose, onSaved }:
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
         <View style={s.modalOverlay}>
-          <View style={s.modalContainer}>
+          <View style={s.modalContainer} accessibilityViewIsModal={true}>
             <Text style={s.modalTitle}>{t.editContact.title}</Text>
             <ScrollView
               showsVerticalScrollIndicator={false}

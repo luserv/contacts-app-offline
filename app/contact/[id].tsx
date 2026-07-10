@@ -16,14 +16,16 @@ import { ContactBankAccount, ContactEmail, ContactKeyword, ContactNote, ContactO
 import { useI18n } from '../../utils/i18n';
 import { useResponsive } from '../../utils/responsive';
 import { calcularEdad, ContactDetail, displayName, EXCLUDED_FIELDS, formatBirthdate, getZodiacKey, getZodiacSymbol } from '../../utils/contactUtils';
+import { useTheme } from '../../utils/theme';
 
 export default function ContactDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string | string[] }>();
   const contactId = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
   const { t, lang } = useI18n();
-  const { isDesktop, r } = useResponsive();
-  const { getContact, getIdentityCards, getRelationships, getContactOrganizations, getContactPhones, getContactEmails, getContactKeywords, getBankAccounts, getContactNotes, getContactUrls, fetchContacts, deleteContact } = useContacts();
+  const { isDesktop, isTablet, r } = useResponsive();
+  const { colors } = useTheme();
+  const { getContact, getIdentityCards, getRelationships, getContactOrganizations, getContactPhones, getContactEmails, getContactKeywords, getBankAccounts, getContactNotes, getContactUrls, deleteContact } = useContacts();
 
   const [contact, setContact] = useState<ContactDetail | null>(null);
   const [identityCards, setIdentityCards] = useState<IdentityCard[]>([]);
@@ -47,21 +49,22 @@ export default function ContactDetailScreen() {
         setDeleting(true);
         const ok = await deleteContact(contactId);
         if (ok) router.replace('/');
-        else Alert.alert(t.common.error ?? 'Error', t.common.deleteError ?? 'Could not delete contact.');
+        else Alert.alert(t.common.error, t.common.deleteError);
       } catch (e) {
         console.error(e);
-        Alert.alert('Error', e instanceof Error ? e.message : String(e));
+        Alert.alert(t.common.error, e instanceof Error ? e.message : String(e));
       } finally {
         setDeleting(false);
       }
     };
+    const name = `${contact?.first_name ?? ''} ${contact?.surname ?? ''}`.trim();
     if (typeof window !== 'undefined' && !(window as any).ReactNativeWebView) {
-      if (confirm(`Delete ${contact?.first_name} ${contact?.surname}?`)) doDelete();
+      if (confirm(t.contact.deleteConfirm(name))) doDelete();
     } else {
       Alert.alert(
-        'Delete contact',
-        `Delete ${contact?.first_name} ${contact?.surname}?`,
-        [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: doDelete }]
+        t.common.deleteTitle,
+        t.contact.deleteConfirm(name),
+        [{ text: t.common.deleteCancel, style: 'cancel' }, { text: t.common.deleteAction, style: 'destructive', onPress: doDelete }]
       );
     }
   };
@@ -77,7 +80,6 @@ export default function ContactDetailScreen() {
       const data = await getContact(contactId);
       if (!data) { setError(t.detail.notFound); return; }
       setContact(data as ContactDetail);
-      await fetchContacts();
       setIdentityCards(await getIdentityCards(contactId));
       setRelationships(await getRelationships(contactId));
       setOrganizations(await getContactOrganizations(contactId));
@@ -140,10 +142,14 @@ export default function ContactDetailScreen() {
   ].filter(Boolean) as { key: string; label: string; value: string; helperText?: string | null }[];
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ headerTitle: `${contact.first_name ?? ''} ${contact.surname ?? ''}`.trim() }} />
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+      <Stack.Screen options={{
+        headerTitle: `${contact.first_name ?? ''} ${contact.surname ?? ''}`.trim(),
+        headerStyle: { backgroundColor: colors.bg },
+        headerTintColor: colors.accent,
+      }} />
 
-      <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
+      <ScrollView contentContainerStyle={[styles.content, isTablet && !isDesktop && styles.contentTablet, isDesktop && styles.contentDesktop]}>
 
         {/* Encabezado */}
         <View style={styles.headerContainer}>
@@ -163,15 +169,15 @@ export default function ContactDetailScreen() {
         </View>
 
         {/* Card detalles */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>{t.detail.details}</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{t.detail.details}</Text>
             <View style={styles.cardActions}>
-              <Pressable style={styles.editButton} onPress={() => setEditVisible(true)}>
-                <Text style={styles.editButtonText}>{t.common.edit}</Text>
+              <Pressable style={[styles.editButton, { borderColor: colors.accent }]} onPress={() => setEditVisible(true)} accessibilityLabel={t.common.edit}>
+                <Text style={[styles.editButtonText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
-              <Pressable style={styles.deleteButton} onPress={handleDelete}>
-                <Text style={styles.deleteButtonText}>{t.common.delete}</Text>
+              <Pressable style={[styles.deleteButton, { borderColor: colors.destructive }]} onPress={handleDelete} accessibilityLabel={t.common.delete}>
+                <Text style={[styles.deleteButtonText, { color: colors.destructive }]}>{t.common.delete}</Text>
               </Pressable>
             </View>
           </View>
@@ -220,6 +226,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2F2F7' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { padding: 20, paddingBottom: 40, maxWidth: 900, width: '100%', alignSelf: 'center' },
+  contentTablet: { paddingHorizontal: 24, paddingVertical: 24 },
   contentDesktop: { paddingHorizontal: 32, paddingVertical: 28 },
 
   headerContainer: { alignItems: 'center', marginBottom: 24 },
@@ -237,9 +244,9 @@ const styles = StyleSheet.create({
   cardActions: { flexDirection: 'row', gap: 8 },
   cardTitle: { fontSize: 17, fontWeight: '600', color: '#333' },
 
-  editButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#007AFF' },
+  editButton: { paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#007AFF', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   editButtonText: { color: '#007AFF', fontSize: 14, fontWeight: '600' },
-  deleteButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#FF3B30' },
+  deleteButton: { paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#FF3B30', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   deleteButtonText: { color: '#FF3B30', fontSize: 14, fontWeight: '600' },
 
   errorText: { fontSize: 16, color: '#FF3B30', marginBottom: 10 },

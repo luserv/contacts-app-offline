@@ -12,6 +12,10 @@ expo-env.d.ts
 .vscode/
 .idea/
 
+
+# builds
+*.apk
+
 # Native
 .kotlin/
 *.orig.*
@@ -53,9 +57,6 @@ app-example
 data/
 *.db
 
-# Firebase / Google services (contienen API keys reales)
-google-services.json
-GoogleService-Info.plist
 
 # Claude Code configuración local
 .claude/settings.local.json

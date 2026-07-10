@@ -14,6 +14,7 @@ import {
 import { useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useResponsive } from '../../utils/responsive';
+import { useTheme } from '../../utils/theme';
 import {
   cancelAllBirthdayNotifications,
   getScheduledBirthdayCount,
@@ -34,6 +35,7 @@ export default function NotificationsScreen() {
   const { t } = useI18n();
   const { contacts, fetchContacts } = useContacts();
   const { isDesktop, r } = useResponsive();
+  const { colors } = useTheme();
 
   const [settings, setSettings] = useState<BirthdayNotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
   const [hourText, setHourText] = useState('09');
@@ -161,8 +163,8 @@ export default function NotificationsScreen() {
 
   if (!loaded) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator color="#007AFF" />
+      <View style={[styles.loaderContainer, { backgroundColor: colors.bg }]}>
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
@@ -173,26 +175,26 @@ export default function NotificationsScreen() {
     t.notificationsScreen.daysBeforeN(n);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.bg }]} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
       <Text style={styles.headerDesc}>{t.notificationsScreen.desc}</Text>
 
       {!notificationsAvailable && (
-        <View style={[styles.statusBox, styles.statusBoxError]}>
-          <Text style={styles.statusText}>{t.notificationsScreen.unavailable}</Text>
+        <View style={[styles.statusBox, { backgroundColor: colors.statusErrorBg }]}>
+          <Text style={[styles.statusText, { color: colors.text }]}>{t.notificationsScreen.unavailable}</Text>
         </View>
       )}
 
       {/* Activar */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
         <View style={styles.toggleRow}>
           <View style={{ flex: 1, paddingRight: 12 }}>
-            <Text style={styles.cardTitle}>{t.notificationsScreen.enabled}</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{t.notificationsScreen.enabled}</Text>
             <Text style={styles.cardDesc}>{t.notificationsScreen.enabledDesc}</Text>
           </View>
           <Switch
             value={settings.enabled}
             onValueChange={v => setSettings(prev => ({ ...prev, enabled: v }))}
-            trackColor={{ false: '#C7C7CC', true: '#34C759' }}
+            trackColor={{ false: colors.separator, true: colors.success }}
           />
         </View>
         {activeCount !== null && (
@@ -201,16 +203,16 @@ export default function NotificationsScreen() {
       </View>
 
       {/* Antelación */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t.notificationsScreen.daysBefore}</Text>
+      <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t.notificationsScreen.daysBefore}</Text>
         <View style={styles.chipRow}>
           {DAYS_OPTIONS.map(d => (
             <Pressable
               key={d}
-              style={[styles.chip, settings.daysBefore === d && styles.chipActive]}
+              style={[styles.chip, { backgroundColor: colors.fill, borderColor: colors.separator }, settings.daysBefore === d && styles.chipActive]}
               onPress={() => setSettings(prev => ({ ...prev, daysBefore: d }))}
             >
-              <Text style={[styles.chipText, settings.daysBefore === d && styles.chipTextActive]}>
+              <Text style={[styles.chipText, { color: colors.text }, settings.daysBefore === d && styles.chipTextActive]}>
                 {daysLabel(d)}
               </Text>
             </Pressable>
@@ -219,48 +221,48 @@ export default function NotificationsScreen() {
       </View>
 
       {/* Hora */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t.notificationsScreen.time}</Text>
+      <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t.notificationsScreen.time}</Text>
         <Text style={styles.cardDesc}>{t.notificationsScreen.timeDesc}</Text>
         <View style={styles.timeRow}>
           <View style={styles.timeField}>
             <Text style={styles.fieldLabel}>{t.notificationsScreen.hour}</Text>
             <TextInput
-              style={styles.timeInput}
+              style={[styles.timeInput, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
               value={hourText}
               onChangeText={formatHour}
               keyboardType={Platform.OS === 'web' ? 'default' : 'numeric'}
               maxLength={2}
               placeholder="09"
-              placeholderTextColor="#C7C7CC"
+              placeholderTextColor={colors.placeholder}
             />
           </View>
-          <Text style={styles.timeColon}>:</Text>
+          <Text style={[styles.timeColon, { color: colors.textSecondary }]}>:</Text>
           <View style={styles.timeField}>
             <Text style={styles.fieldLabel}>{t.notificationsScreen.minute}</Text>
             <TextInput
-              style={styles.timeInput}
+              style={[styles.timeInput, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
               value={minuteText}
               onChangeText={formatMinute}
               keyboardType={Platform.OS === 'web' ? 'default' : 'numeric'}
               maxLength={2}
               placeholder="00"
-              placeholderTextColor="#C7C7CC"
+              placeholderTextColor={colors.placeholder}
             />
           </View>
         </View>
       </View>
 
       {/* Mensaje */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t.notificationsScreen.customMessage}</Text>
+      <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t.notificationsScreen.customMessage}</Text>
         <Text style={styles.cardDesc}>{t.notificationsScreen.messageHelp}</Text>
         <TextInput
-          style={styles.messageInput}
+          style={[styles.messageInput, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
           value={settings.messageTemplate ?? ''}
           onChangeText={text => setSettings(prev => ({ ...prev, messageTemplate: text }))}
           placeholder={t.notificationsScreen.messagePlaceholder}
-          placeholderTextColor="#C7C7CC"
+          placeholderTextColor={colors.placeholder}
           multiline
         />
       </View>
@@ -287,8 +289,8 @@ export default function NotificationsScreen() {
       </Pressable>
 
       {status && (
-        <View style={[styles.statusBox, statusError && styles.statusBoxError]}>
-          <Text style={styles.statusText}>{status}</Text>
+        <View style={[styles.statusBox, { backgroundColor: statusError ? colors.statusErrorBg : colors.statusSuccessBg }]}>
+          <Text style={[styles.statusText, { color: colors.text }]}>{status}</Text>
         </View>
       )}
     </ScrollView>

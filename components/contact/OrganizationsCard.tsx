@@ -3,7 +3,7 @@ import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, St
 import { ContactOrganization, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { edadEnFecha, formatDate } from '../../utils/contactUtils';
-import { sharedStyles as s } from './contactStyles';
+import { useSharedStyles } from './contactStyles';
 
 interface Props {
   contactId: string;
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export default function OrganizationsCard({ contactId, birthdate, initialOrganizations }: Props) {
+  const s = useSharedStyles();
   const { t } = useI18n();
   const { getContactOrganizations, addContactOrganization, updateContactOrganization, removeContactOrganization, searchOrganizations, searchAchievements } = useContacts();
 
@@ -100,18 +101,28 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
 
   return (
     <>
+      {organizations.length === 0 ? (
+        <Pressable style={s.addRow} onPress={openAddModal}>
+          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <Text style={s.addRowLabel}>{t.organizations.title}</Text>
+        </Pressable>
+      ) : (
       <View style={s.card}>
         <View style={s.cardHeader}>
           <Text style={s.cardTitle}>{t.organizations.title}</Text>
-          <Pressable style={s.addButton} onPress={openAddModal}>
+          <Pressable style={s.addButton} onPress={openAddModal} accessibilityLabel={t.organizations.addTitle}>
             <Text style={s.addButtonText}>{t.common.add}</Text>
           </Pressable>
         </View>
 
-        {organizations.length === 0 ? (
-          <Text style={s.emptyText}>{t.organizations.empty}</Text>
-        ) : (
-          organizations.map(org => (
+        {[...organizations].sort((a, b) => {
+            if (!a.date && !b.date) return 0;
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            const [ad, am, ay] = a.date.split('/').map(Number);
+            const [bd, bm, by] = b.date.split('/').map(Number);
+            return new Date(ay, am - 1, ad).getTime() - new Date(by, bm - 1, bd).getTime();
+          }).map(org => (
             <View key={org.id} style={styles.orgRow}>
               <View style={styles.orgInfo}>
                 <Text style={styles.orgName}>{org.organization_name}</Text>
@@ -132,21 +143,22 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
                   </Text>
                 ) : null}
               </View>
-              <Pressable onPress={() => openEditModal(org)} style={styles.editBtn}>
+              <Pressable onPress={() => openEditModal(org)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
                 <Text style={styles.editBtnText}>{t.common.edit}</Text>
               </Pressable>
-              <Pressable onPress={() => handleRemove(org)} style={s.removeBtn}>
+              <Pressable onPress={() => handleRemove(org)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
               </Pressable>
             </View>
           ))
-        )}
+        }
       </View>
+      )}
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={s.modalOverlay}>
-            <View style={s.modalContainer}>
+            <View style={s.modalContainer} accessibilityViewIsModal={true}>
             <Text style={s.modalTitle}>
               {editingId !== null ? t.common.edit : t.organizations.addTitle}
             </Text>
@@ -215,7 +227,7 @@ const styles = StyleSheet.create({
   orgName: { fontSize: 16, fontWeight: '600', color: '#000' },
   orgAchievement: { fontSize: 14, color: '#333', marginTop: 2 },
   orgDate: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-  editBtn: { paddingHorizontal: 8, paddingVertical: 8 },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   editBtnText: { fontSize: 14, color: '#007AFF' },
   suggestions: {
     borderWidth: 1, borderColor: '#E5E5EA', borderRadius: 8,

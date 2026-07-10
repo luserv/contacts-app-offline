@@ -8,7 +8,7 @@ export interface ContactListItem {
   [key: string]: any;
 }
 
-export type SortKey = 'first_name' | 'surname' | 'age_asc' | 'age_desc';
+export type SortKey = 'first_name' | 'surname' | 'age_asc' | 'age_desc' | 'insertion_desc' | 'insertion_asc';
 export type GenderFilter = 'MALE' | 'FEMALE' | 'UNSPECIFIED' | null;
 export type CedulaFilterMode = 'all' | 'with' | 'without';
 export type CedulaFilter = { mode: CedulaFilterMode };
@@ -35,13 +35,16 @@ export type SearchFilter =
 
 type AgeOp = Extract<SearchFilter, { type: 'age' }>['op'];
 
-export const DOC_TYPES = ['Passport', 'ID Card', "Driver's License", 'Other'];
+export const DOC_TYPES = ['Passport', 'ID Card', "Driver's License", 'Other'] as const;
+export const DOC_TYPES_KEYS = ['docPassport', 'docIdCard', 'docDriversLicense', 'docOther'] as const;
 
-export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'first_name', label: 'First name (A-Z)' },
-  { key: 'surname', label: 'Surname (A-Z)' },
-  { key: 'age_desc', label: 'Age (oldest -> youngest)' },
-  { key: 'age_asc', label: 'Age (youngest -> oldest)' },
+export const SORT_OPTIONS: { key: SortKey; transKey: string }[] = [
+  { key: 'first_name', transKey: 'sortFirstName' },
+  { key: 'surname', transKey: 'sortSurname' },
+  { key: 'age_desc', transKey: 'sortAgeDesc' },
+  { key: 'age_asc', transKey: 'sortAgeAsc' },
+  { key: 'insertion_desc', transKey: 'sortInsertionDesc' },
+  { key: 'insertion_asc', transKey: 'sortInsertionAsc' },
 ];
 
 export function getGenderFilterOptions(t: any): { value: GenderFilter; label: string }[] {
@@ -146,6 +149,9 @@ export function sortContacts(list: ContactListItem[], key: SortKey): ContactList
   return [...list].sort((a, b) => {
     if (key === 'first_name') return (a.first_name ?? '').localeCompare(b.first_name ?? '');
     if (key === 'surname') return (a.surname ?? '').localeCompare(b.surname ?? '');
+
+    if (key === 'insertion_desc') return (b.rowid ?? 0) - (a.rowid ?? 0);
+    if (key === 'insertion_asc') return (a.rowid ?? 0) - (b.rowid ?? 0);
 
     const aKey = birthdateToSortKey(a.birthdate);
     const bKey = birthdateToSortKey(b.birthdate);

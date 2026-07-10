@@ -7,7 +7,6 @@
   },
   "files": [
     "electron/**/*",
-    "dist/**/*",
     "utils/**/*",
     "!node_modules/**",
     "node_modules/better-sqlite3/**/*",
@@ -19,7 +18,8 @@
   },
   "extraResources": [
     { "from": ".env", "to": ".env" },
-    { "from": ".env.preview", "to": ".env.preview" }
+    { "from": ".env.preview", "to": ".env.preview" },
+    { "from": "dist", "to": "dist" }
   ],
   "npmRebuild": false,
   "asar": {

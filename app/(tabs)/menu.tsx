@@ -1,66 +1,56 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Bell, ChevronRight, RefreshCw, Settings } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../../utils/i18n';
 import { useResponsive } from '../../utils/responsive';
+import { useTheme } from '../../utils/theme';
 
 export default function MenuScreen() {
   const router = useRouter();
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const { isDesktop, r } = useResponsive();
+  const { colors } = useTheme();
 
   return (
-    <View style={[styles.container, isDesktop && styles.containerDesktop]}>
+    <View style={[styles.container, isDesktop && styles.containerDesktop, { backgroundColor: colors.bg }]}>
       <View style={[styles.inner, isDesktop && styles.innerDesktop]}>
-        <Pressable style={styles.menuItem} onPress={() => router.push('/notifications')}>
+        <Pressable style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.separator }]} onPress={() => router.push('/notifications')}>
           <View style={styles.left}>
-            <View style={styles.iconWrap}>
-              <Bell size={18} color="#007AFF" />
+            <View style={[styles.iconWrap, { backgroundColor: colors.accentSubtle }]}>
+              <Ionicons name="notifications" size={18} color={colors.accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.itemTitle}>{t.tabs.notifications}</Text>
-              <Text style={styles.itemSubtitle}>
-                {lang === 'es'
-                  ? 'Personaliza los recordatorios de cumpleaños'
-                  : 'Customize birthday reminders'}
-              </Text>
+              <Text style={[styles.itemTitle, { color: colors.text }]}>{t.tabs.notifications}</Text>
+              <Text style={styles.itemSubtitle}>{t.menu.notifications}</Text>
             </View>
           </View>
-          <ChevronRight size={18} color="#8E8E93" />
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
         </Pressable>
 
-        <Pressable style={[styles.menuItem, { marginTop: r(12, 12, 16) }]} onPress={() => router.push('/sync')}>
+        <Pressable style={[styles.menuItem, { marginTop: r(12, 12, 16), backgroundColor: colors.surface, borderColor: colors.separator }]} onPress={() => router.push('/sync')}>
           <View style={styles.left}>
-            <View style={[styles.iconWrap, { backgroundColor: '#E8F5E9' }]}>
-              <RefreshCw size={18} color="#34A853" />
+            <View style={[styles.iconWrap, { backgroundColor: 'rgba(52,168,83,0.12)' }]}>
+              <Ionicons name="refresh" size={18} color={colors.success} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.itemTitle}>{t.tabs.sync}</Text>
-              <Text style={styles.itemSubtitle}>
-                {lang === 'es'
-                  ? 'Respaldo, restauración y Google Drive'
-                  : 'Backup, restore and Google Drive'}
-              </Text>
+              <Text style={[styles.itemTitle, { color: colors.text }]}>{t.tabs.sync}</Text>
+              <Text style={styles.itemSubtitle}>{t.menu.sync}</Text>
             </View>
           </View>
-          <ChevronRight size={18} color="#8E8E93" />
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
         </Pressable>
 
-        <Pressable style={[styles.menuItem, { marginTop: r(12, 12, 16) }]} onPress={() => router.push('/config')}>
+        <Pressable style={[styles.menuItem, { marginTop: r(12, 12, 16), backgroundColor: colors.surface, borderColor: colors.separator }]} onPress={() => router.push('/config')}>
           <View style={styles.left}>
-            <View style={styles.iconWrap}>
-              <Settings size={18} color="#007AFF" />
+            <View style={[styles.iconWrap, { backgroundColor: colors.accentSubtle }]}>
+              <Ionicons name="settings" size={18} color={colors.accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.itemTitle}>{t.config.title}</Text>
-              <Text style={styles.itemSubtitle}>
-                {lang === 'es'
-                  ? 'Idioma, cuenta y licencia'
-                  : 'Language, account and license'}
-              </Text>
+              <Text style={[styles.itemTitle, { color: colors.text }]}>{t.config.title}</Text>
+              <Text style={styles.itemSubtitle}>{t.menu.config}</Text>
             </View>
           </View>
-          <ChevronRight size={18} color="#8E8E93" />
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
         </Pressable>
       </View>
     </View>

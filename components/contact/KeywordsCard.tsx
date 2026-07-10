@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactKeyword, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
-import { sharedStyles as s } from './contactStyles';
+import { useSharedStyles } from './contactStyles';
 
 interface Props {
   contactId: string;
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function KeywordsCard({ contactId, initialKeywords }: Props) {
+  const s = useSharedStyles();
   const { t } = useI18n();
   const { getContactKeywords, addContactKeyword, removeContactKeyword } = useContacts();
 
@@ -51,12 +52,21 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
     ]);
   };
 
+  if (keywords.length === 0 && !adding) {
+    return (
+      <Pressable style={s.addRow} onPress={openInput}>
+        <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+        <Text style={s.addRowLabel}>{t.keywords.title}</Text>
+      </Pressable>
+    );
+  }
+
   return (
     <View style={s.card}>
       <View style={s.cardHeader}>
         <Text style={s.cardTitle}>{t.keywords.title}</Text>
         {!adding && (
-          <Pressable style={s.addButton} onPress={openInput}>
+          <Pressable style={s.addButton} onPress={openInput} accessibilityLabel={t.keywords.title}>
             <Text style={s.addButtonText}>{t.common.add}</Text>
           </Pressable>
         )}
@@ -66,7 +76,7 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
         {keywords.map(kw => (
           <Pressable key={kw.id} style={styles.chip} onLongPress={() => handleRemove(kw)}>
             <Text style={styles.chipText}>{kw.keyword}</Text>
-            <Pressable onPress={() => handleRemove(kw)} hitSlop={6}>
+            <Pressable onPress={() => handleRemove(kw)} hitSlop={6} accessibilityLabel={t.common.delete}>
               <Text style={styles.chipRemove}>✕</Text>
             </Pressable>
           </Pressable>
@@ -89,10 +99,6 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
           </View>
         )}
       </View>
-
-      {keywords.length === 0 && !adding && (
-        <Text style={s.emptyText}>{t.keywords.empty}</Text>
-      )}
     </View>
   );
 }

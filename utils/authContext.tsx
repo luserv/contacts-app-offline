@@ -1,10 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleAuthProvider,
-  getRedirectResult,
   onAuthStateChanged,
   signInWithCredential,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
   User,
 } from 'firebase/auth';
@@ -12,6 +11,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { auth, db_firebase } from './firebase';
+import { rcAddListener, rcConfigure, rcIsLicensed, rcLogOut } from './purchases';
 
 const GUEST_KEY = 'auth_guest_mode';
 const DRIVE_TOKEN_KEY = 'drive_access_token';
@@ -55,8 +55,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkLicense = useCallback(async (uid: string) => {
     try {
-      const snap = await getDoc(doc(db_firebase, 'licenses', uid));
-      setLicensed(snap.exists() && snap.data()?.licensed === true);
+      if (Platform.OS === 'android') {
+        // Android: RevenueCat es la fuente de verdad
+        await rcConfigure(uid);
+        const active = await rcIsLicensed();
+        setLicensed(active);
+        // Escucha cambios en tiempo real (ej. tras una compra)
+        rcAddListener(setLicensed);
+      } else {
+        // Web/Electron: Firestore
+        const snap = await getDoc(doc(db_firebase, 'licenses', uid));
+        setLicensed(snap.exists() && snap.data()?.licensed === true);
+      }
     } catch {
       setLicensed(false);
     }
@@ -96,16 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Capturar resultado del redirect de Google (solo en web)
-    if (Platform.OS === 'web') {
-      getRedirectResult(auth).then(result => {
-        if (result) {
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-          if (credential?.accessToken) persistDriveToken(credential.accessToken);
-        }
-      }).catch(() => {});
-    }
-
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
@@ -114,53 +114,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await checkLicense(u.uid);
 
         if (Platform.OS === 'android') {
-          // Android: GoogleSignin maneja el refresh automáticamente
           try {
             const { GoogleSignin } = require('@react-native-google-signin/google-signin');
             const tokens = await GoogleSignin.getTokens();
             await persistDriveToken(tokens.accessToken);
           } catch {}
-      } else {
-          // Web/Electron: restaurar token persistido si no expiró
+        } else {
           try {
             const stored = await AsyncStorage.getItem(DRIVE_TOKEN_KEY);
             const expiry = await AsyncStorage.getItem(DRIVE_TOKEN_EXPIRY_KEY);
             if (stored && expiry && Date.now() < Number(expiry)) {
-              setDriveToken(stored); // ya está guardado, solo restaurar en estado
+              setDriveToken(stored);
             }
           } catch {}
-
-        // Electron: si Firebase no restauró sesión, intentar re-auth silenciosa una vez.
-        // Evita pedir login en cada arranque cuando la sesión de Google sigue activa.
-        const isElectron = typeof window !== 'undefined' && !!(window as any).electronAuth;
-        if (!u && isElectron) {
-          try {
-            const signedOutFlag = await AsyncStorage.getItem(ELECTRON_SIGNED_OUT_KEY);
-            if (signedOutFlag !== 'true') {
-              const authUrl = buildGoogleOAuthUrl('none');
-              const redirectUri = 'http://localhost';
-              const { access_token, id_token } = await (window as any).electronAuth.googleOAuth({
-                authUrl,
-                redirectUri,
-                silent: true,
-              });
-              if (access_token && id_token) {
-                const credential = GoogleAuthProvider.credential(id_token, access_token);
-                await signInWithCredential(auth, credential);
-                await persistDriveToken(access_token);
-                await AsyncStorage.removeItem(ELECTRON_SIGNED_OUT_KEY);
-              }
-            }
-          } catch {
-            // Si falla silent auth, se mantiene estado no autenticado y se pedirá login solo al usar Drive.
-          }
-        }
         }
       } else {
         setLicensed(false);
-        // Restaurar modo invitado si estaba activo
         const guest = await AsyncStorage.getItem(GUEST_KEY);
-        if (guest === 'true') setIsGuest(true);
+        if (guest === 'true') {
+          setIsGuest(true);
+        } else {
+          const isElectron = typeof window !== 'undefined' && !!(window as any).electronAuth;
+          if (isElectron) {
+            try {
+              const signedOutFlag = await AsyncStorage.getItem(ELECTRON_SIGNED_OUT_KEY);
+              if (signedOutFlag !== 'true') {
+                const authUrl = buildGoogleOAuthUrl('none');
+                const redirectUri = 'http://localhost';
+                const { access_token, id_token } = await (window as any).electronAuth.googleOAuth({
+                  authUrl,
+                  redirectUri,
+                  silent: true,
+                });
+                if (access_token && id_token) {
+                  const credential = GoogleAuthProvider.credential(id_token, access_token);
+                  await signInWithCredential(auth, credential);
+                  await persistDriveToken(access_token);
+                  await AsyncStorage.removeItem(ELECTRON_SIGNED_OUT_KEY);
+                }
+              }
+            } catch {}
+          }
+        }
       }
       setLoading(false);
     });
@@ -188,7 +183,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await AsyncStorage.removeItem(ELECTRON_SIGNED_OUT_KEY);
         return;
       }
-      await signInWithRedirect(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) await persistDriveToken(credential.accessToken);
       return;
     }
 
@@ -199,6 +196,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOutUser = useCallback(async () => {
     await signOut(auth);
     setIsGuest(false);
+    setLicensed(false);
+    await rcLogOut();
     await persistDriveToken(null);
     if (Platform.OS === 'web' && typeof window !== 'undefined' && (window as any).electronAuth) {
       await (window as any).electronAuth.clearRefreshToken();

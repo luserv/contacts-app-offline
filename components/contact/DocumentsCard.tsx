@@ -1,10 +1,12 @@
+import { copyToClipboard } from '../../utils/clipboard';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Dropdown from '../Dropdown';
 import { IdentityCard, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
+import { DOC_TYPES_KEYS } from '../../utils/contactList';
 import { DOC_TYPES, DOCS_WITH_DATES, formatDate } from '../../utils/contactUtils';
-import { sharedStyles as s } from './contactStyles';
+import { useSharedStyles } from './contactStyles';
 
 interface Props {
   contactId: string;
@@ -12,6 +14,7 @@ interface Props {
 }
 
 export default function DocumentsCard({ contactId, initialCards }: Props) {
+  const s = useSharedStyles();
   const { t } = useI18n();
   const { getIdentityCards, addIdentityCard, updateIdentityCard, deleteIdentityCard } = useContacts();
 
@@ -53,7 +56,7 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
       setCards(await getIdentityCards(contactId));
       setModalVisible(false);
     } else {
-      Alert.alert(t.common.error, docType === 'Cédula' ? t.documents.cedularError : t.documents.saveError);
+      Alert.alert(t.common.error, docType === t.contactList.docIdCard ? t.documents.cedularError : t.documents.saveError);
     }
   };
 
@@ -75,55 +78,66 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
 
   return (
     <>
-      <View style={s.card}>
-        <View style={s.cardHeader}>
-          <Text style={s.cardTitle}>{t.documents.title}</Text>
-          <Pressable style={s.addButton} onPress={openAddModal}>
-            <Text style={s.addButtonText}>{t.common.add}</Text>
-          </Pressable>
-        </View>
-
-        {cards.length === 0 ? (
-          <Text style={s.emptyText}>{t.documents.empty}</Text>
-        ) : (
-          cards.map(doc => (
+      {cards.length === 0 ? (
+        <Pressable style={s.addRow} onPress={openAddModal}>
+          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <Text style={s.addRowLabel}>{t.documents.title}</Text>
+        </Pressable>
+      ) : (
+        <View style={s.card}>
+          <View style={s.cardHeader}>
+            <Text style={s.cardTitle}>{t.documents.title}</Text>
+            <Pressable style={s.addButton} onPress={openAddModal} accessibilityLabel={t.documents.addTitle}>
+              <Text style={s.addButtonText}>{t.common.add}</Text>
+            </Pressable>
+          </View>
+          {cards.map(doc => (
             <View key={doc.id} style={styles.docRow}>
               <View style={styles.docInfo}>
                 <Text style={styles.docType}>{doc.doc_type}</Text>
                 <Text style={styles.docNumber}>
-                  {doc.doc_type === 'Licencia de conducir' ? `${t.documents.licenseType}: ` : ''}{doc.card_number}
+                  {doc.doc_type === t.contactList.docDriversLicense ? `${t.documents.licenseType}: ` : ''}{doc.card_number}
                 </Text>
                 {doc.issue_date ? <Text style={styles.docDate}>{t.documents.issuedLabel} {doc.issue_date}</Text> : null}
                 {doc.expiry_date ? <Text style={styles.docDate}>{t.documents.expiryLabel} {doc.expiry_date}</Text> : null}
               </View>
-              <Pressable onPress={() => openEditModal(doc)} style={styles.editBtn}>
+              <Pressable
+                style={styles.editBtn}
+                onPress={async () => {
+                  await copyToClipboard(doc.card_number);
+                  Alert.alert(t.contactInfo.phoneActions.copied);
+                }}
+              >
+                <Text style={styles.editBtnText}>📋</Text>
+              </Pressable>
+              <Pressable onPress={() => openEditModal(doc)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
                 <Text style={styles.editBtnText}>{t.common.edit}</Text>
               </Pressable>
-              <Pressable onPress={() => handleRemove(doc)} style={s.removeBtn}>
+              <Pressable onPress={() => handleRemove(doc)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
               </Pressable>
             </View>
-          ))
-        )}
-      </View>
+          ))}
+        </View>
+      )}
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={s.modalOverlay}>
-            <View style={s.modalContainer}>
+            <View style={s.modalContainer} accessibilityViewIsModal={true}>
               <Text style={s.modalTitle}>{editingId !== null ? t.common.edit : t.documents.addTitle}</Text>
               <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Text style={s.fieldLabel}>{t.documents.docType}</Text>
               <Dropdown
-                options={DOC_TYPES.map(d => ({ label: d, value: d }))}
+                options={DOC_TYPES.map((d, i) => ({ label: (t.contactList as any)[DOC_TYPES_KEYS[i]], value: d }))}
                 value={docType}
                 onSelect={v => v && setDocType(v)}
               />
 
-              <Text style={s.fieldLabel}>{docType === 'Licencia de conducir' ? t.documents.licenseType : t.documents.number} <Text style={s.required}>{t.common.required}</Text></Text>
+              <Text style={s.fieldLabel}>{docType === t.contactList.docDriversLicense ? t.documents.licenseType : t.documents.number} <Text style={s.required}>{t.common.required}</Text></Text>
               <TextInput
                 style={s.input} value={cardNumber} onChangeText={setCardNumber}
-                placeholder={docType === 'Licencia de conducir' ? t.documents.licenseType : t.documents.number} placeholderTextColor="#C7C7CC"
+                placeholder={docType === t.contactList.docDriversLicense ? t.documents.licenseType : t.documents.number} placeholderTextColor="#C7C7CC"
                 autoCapitalize="characters"
               />
 
@@ -172,6 +186,6 @@ const styles = StyleSheet.create({
   docType: { fontSize: 12, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
   docNumber: { fontSize: 16, color: '#000', fontWeight: '500' },
   docDate: { fontSize: 13, color: '#555', marginTop: 2 },
-  editBtn: { paddingHorizontal: 8, paddingVertical: 8 },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   editBtnText: { fontSize: 14, color: '#007AFF' },
 });

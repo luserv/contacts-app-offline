@@ -2,30 +2,32 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { checkBackupExists, downloadDB, uploadDB } from '../../utils/driveSync';
 import {
   exportDatabaseToFile,
   importDatabaseFromFile,
   readDatabaseAsBase64,
-  reloadDatabase,
   writeDatabaseFromBase64,
 } from '../../utils/db';
 import { useAuth } from '../../utils/authContext';
 import { useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useResponsive } from '../../utils/responsive';
+import { useTheme } from '../../utils/theme';
 import { useRouter } from 'expo-router';
 
 export default function SyncScreen() {
   const [status, setStatus] = useState<string | null>(null);
   const [driveStatus, setDriveStatus] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [loadingOp, setLoadingOp] = useState<string | null>(null);
   const [hasBackup, setHasBackup] = useState<boolean | null>(null);
   const { user, driveToken, refreshDriveToken, signIn } = useAuth();
-  const { fetchContacts, importVcf } = useContacts();
-  const { t } = useI18n();
+  const { fetchContacts, importVcf, syncing, syncEnabled, lastSyncAt, setSyncEnabled, syncNow } = useContacts();
+  const { t, lang } = useI18n();
   const { isDesktop } = useResponsive();
+  const { colors } = useTheme();
   const router = useRouter();
   const isElectron = typeof window !== 'undefined' && !!(window as any).electronFS;
 
@@ -89,7 +91,7 @@ export default function SyncScreen() {
       if (typeof window !== 'undefined' && (window as any).electronFS) {
         const result = await (window as any).electronFS.readVcf();
         if (result.canceled) return;
-        if (result.error) { setStatus('Error: ' + result.error); return; }
+        if (result.error) { setStatus(t.sync.errorPrefix + result.error); return; }
         content = result.content;
       } else {
         const picked = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
@@ -99,9 +101,9 @@ export default function SyncScreen() {
 
       if (!content) return;
       const { imported, skipped } = await importVcf(content);
-      setStatus(`VCF: ${imported} imported${skipped > 0 ? `, ${skipped} skipped` : ''}.`);
+      setStatus(t.sync.vcfResult(imported, skipped));
     } catch (e) {
-      setStatus('Error: ' + (e instanceof Error ? e.message : String(e)));
+      setStatus(t.sync.errorPrefix + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoadingOp(null);
     }
@@ -166,6 +168,23 @@ export default function SyncScreen() {
     );
   };
 
+  const handleToggleSync = async (value: boolean) => {
+    if (value && !driveToken) { promptSignIn(); return; }
+    await setSyncEnabled(value);
+  };
+
+  const handleSyncNow = async () => {
+    if (!driveToken) { promptSignIn(); return; }
+    setSyncStatus(null);
+    const res = await syncNow();
+    if (res.error) setSyncStatus(t.sync.errorPrefix + res.error);
+    else setSyncStatus(res.changed ? t.sync.imported : t.sync.upToDate);
+  };
+
+  const lastSyncLabel = lastSyncAt
+    ? `${t.sync.lastSync}: ${new Date(lastSyncAt).toLocaleString(lang === 'es' ? 'es' : 'en')}`
+    : t.sync.never;
+
   const promptSignIn = () => {
     const title = driveToken === null && !user ? t.drive.notLoggedInTitle : t.drive.sessionExpiredTitle;
     const msg   = driveToken === null && !user ? t.drive.notLoggedInMsg   : t.drive.sessionExpiredMsg;
@@ -182,7 +201,7 @@ export default function SyncScreen() {
       }
     };
 
-    if (isElectron) {
+    if (Platform.OS === 'web') {
       if (confirm(msg)) doSignIn();
     } else {
       Alert.alert(title, msg, [
@@ -254,9 +273,8 @@ export default function SyncScreen() {
         } else {
           await writeDatabaseFromBase64(base64);
         }
-        setDriveStatus(t.drive.restoreSuccess);
-        await reloadDatabase();
         await fetchContacts();
+        setDriveStatus(t.drive.restoreSuccess);
       } catch (e: any) {
         if (e.message === 'NO_BACKUP') {
           setDriveStatus(t.drive.notFound);
@@ -273,7 +291,7 @@ export default function SyncScreen() {
       }
     };
 
-    if (isElectron) {
+    if (Platform.OS === 'web') {
       if (confirm(t.config.importConfirm)) doRestore();
     } else {
       Alert.alert(t.config.importTitle, t.config.importConfirm, [
@@ -284,10 +302,10 @@ export default function SyncScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.bg }]} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
       {/* Base de datos */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{t.config.database}</Text>
+      <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t.config.database}</Text>
         <Text style={styles.cardDesc}>{t.config.databaseDesc}</Text>
 
         <Pressable
@@ -321,16 +339,16 @@ export default function SyncScreen() {
         </Pressable>
 
         {status && (
-          <View style={[styles.statusBox, status.startsWith('Error') && styles.statusBoxError]}>
-            <Text style={styles.statusText}>{status}</Text>
+          <View style={[styles.statusBox, { backgroundColor: status.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
+            <Text style={[styles.statusText, { color: colors.text }]}>{status}</Text>
           </View>
         )}
       </View>
 
       {/* Google Drive */}
       {user && (
-        <View style={[styles.card, { marginTop: 16 }]}>
-          <Text style={styles.cardTitle}>{t.drive.title}</Text>
+        <View style={[styles.card, { marginTop: 16, backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t.drive.title}</Text>
           <Text style={styles.cardDesc}>{t.drive.desc}</Text>
           <Pressable
             style={[styles.button, styles.buttonDrive, !!loadingOp && styles.buttonDisabled]}
@@ -342,8 +360,8 @@ export default function SyncScreen() {
               : <Text style={styles.buttonText}>{t.drive.upload}</Text>}
           </Pressable>
           {hasBackup === false && (
-            <View style={[styles.statusBox, styles.statusBoxError, { marginBottom: 10 }]}>
-              <Text style={styles.statusText}>{t.drive.notFound}</Text>
+            <View style={[styles.statusBox, { backgroundColor: colors.statusErrorBg, marginBottom: 10 }]}>
+              <Text style={[styles.statusText, { color: colors.text }]}>{t.drive.notFound}</Text>
             </View>
           )}
           <Pressable
@@ -356,8 +374,39 @@ export default function SyncScreen() {
               : <Text style={styles.buttonText}>{t.drive.restore}</Text>}
           </Pressable>
           {driveStatus && (
-            <View style={[styles.statusBox, driveStatus.startsWith('Error') && styles.statusBoxError]}>
-              <Text style={styles.statusText}>{driveStatus}</Text>
+            <View style={[styles.statusBox, { backgroundColor: driveStatus.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
+              <Text style={[styles.statusText, { color: colors.text }]}>{driveStatus}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Sincronización entre dispositivos */}
+      {user && (
+        <View style={[styles.card, { marginTop: 16, backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t.sync.title}</Text>
+          <Text style={styles.cardDesc}>{t.sync.desc}</Text>
+          <View style={styles.syncRow}>
+            <Text style={[styles.syncLabel, { color: colors.text }]}>{t.sync.autoLabel}</Text>
+            <Switch
+              value={syncEnabled}
+              onValueChange={handleToggleSync}
+              disabled={!driveToken || syncing}
+            />
+          </View>
+          <Pressable
+            style={[styles.button, styles.buttonSync, (syncing || !driveToken) && styles.buttonDisabled]}
+            onPress={handleSyncNow}
+            disabled={syncing || !driveToken}
+          >
+            {syncing
+              ? <ActivityIndicator color="#1A73E8" />
+              : <Text style={styles.buttonTextSync}>{t.sync.syncNow}</Text>}
+          </Pressable>
+          <Text style={[styles.syncHint, { color: colors.textSecondary ?? '#8E8E93' }]}>{lastSyncLabel}</Text>
+          {syncStatus && (
+            <View style={[styles.statusBox, { backgroundColor: syncStatus.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
+              <Text style={[styles.statusText, { color: colors.text }]}>{syncStatus}</Text>
             </View>
           )}
         </View>
@@ -387,6 +436,11 @@ const styles = StyleSheet.create({
   buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   buttonDrive: { backgroundColor: '#1a73e8' },
   buttonDriveRestore: { backgroundColor: '#34A853' },
+  buttonSync: { backgroundColor: '#F0F4FF', borderWidth: 1, borderColor: '#1A73E8' },
+  buttonTextSync: { fontSize: 16, fontWeight: '600', color: '#1A73E8' },
+  syncRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  syncLabel: { fontSize: 15, fontWeight: '500' },
+  syncHint: { fontSize: 12, color: '#8E8E93', marginTop: 4, marginBottom: 4 },
   statusBox: { marginTop: 8, padding: 12, backgroundColor: '#E8F5E9', borderRadius: 8 },
   statusBoxError: { backgroundColor: '#FFEBEE' },
   statusText: { fontSize: 14, color: '#333' },

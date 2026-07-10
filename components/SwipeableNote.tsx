@@ -1,19 +1,16 @@
+import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
-import { Trash2 } from 'lucide-react-native';
 import React from 'react';
-import { LogBox, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useI18n } from '../utils/i18n';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, {
     FadeIn,
     FadeOut,
     LinearTransition,
     SharedValue,
-    configureReanimatedLogger,
     useAnimatedStyle
 } from 'react-native-reanimated';
-
-LogBox.ignoreAllLogs(); // YOLO
-configureReanimatedLogger({ strict: false }); // YOLO
 
 interface Note {
   id: string;
@@ -29,6 +26,7 @@ interface Props {
 }
 
 export function SwipeableNote({ note, onPress, onDelete }: Props) {
+  const { t } = useI18n();
   const RightAction = (
     prog: SharedValue<number>,
     drag: SharedValue<number>
@@ -46,7 +44,7 @@ export function SwipeableNote({ note, onPress, onDelete }: Props) {
         }}
       >
         <Reanimated.View style={[styleAnimation, styles.rightAction]}>
-          <Trash2 size={24} color="red" />
+          <Ionicons name="trash" size={24} color="red" />
         </Reanimated.View>
       </Pressable>
     );
@@ -79,13 +77,13 @@ export function SwipeableNote({ note, onPress, onDelete }: Props) {
         >
           <View style={styles.content}>
             <Text style={styles.noteTitle}>
-              {note.title || 'Untitled Note'}
+              {note.title || t.common.untitledNote}
             </Text>
             <Text style={styles.noteDate}>
               {format(note.modifiedDate || new Date(), 'MMM d, yyyy')}
             </Text>
             <Text style={styles.notePreview} numberOfLines={2}>
-              {note.content || 'No additional text'}
+              {note.content || t.common.noAdditionalText}
             </Text>
           </View>
         </Pressable>
@@ -104,7 +102,11 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 16,
     borderRadius: 16,
-    boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
     backgroundColor: 'white',
   },
   rightAction: {

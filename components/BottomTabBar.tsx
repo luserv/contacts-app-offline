@@ -3,21 +3,27 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n } from '../utils/i18n';
+import { useTheme } from '../utils/theme';
 
 export default function BottomTabBar() {
   const router = useRouter();
   const { t } = useI18n();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <Pressable style={styles.tab} onPress={() => router.push('/')}>
-        <Ionicons name="home-outline" size={24} color="#007AFF" />
-        <Text style={styles.label}>{t.tabs.contacts}</Text>
+    <View style={[styles.container, { paddingBottom: insets.bottom, backgroundColor: colors.surface, borderTopColor: colors.separator }]}>
+      <Pressable style={styles.tab} onPress={() => router.push('/(tabs)')}>
+        <Ionicons name="person-circle-outline" size={24} color={colors.accent} />
+        <Text style={[styles.label, { color: colors.accent }]}>{t.tabs.contacts}</Text>
       </Pressable>
-      <Pressable style={styles.tab} onPress={() => router.push('/config')}>
-        <Ionicons name="settings-outline" size={24} color="#007AFF" />
-        <Text style={styles.label}>{t.tabs.config}</Text>
+      <Pressable style={styles.tab} onPress={() => router.push('/(tabs)/calendar')}>
+        <Ionicons name="calendar-outline" size={24} color={colors.accent} />
+        <Text style={[styles.label, { color: colors.accent }]}>{t.tabs.calendar}</Text>
+      </Pressable>
+      <Pressable style={styles.tab} onPress={() => router.push('/(tabs)/menu')}>
+        <Ionicons name="ellipsis-horizontal-circle-outline" size={24} color={colors.accent} />
+        <Text style={[styles.label, { color: colors.accent }]}>{t.tabs.menu}</Text>
       </Pressable>
     </View>
   );
@@ -27,14 +33,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#C6C6C8',
-    backgroundColor: '#F9F9F9',
   },
   tab: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     paddingVertical: 10,
   },
   label: {
-    fontSize: 10, color: '#007AFF', marginTop: 3,
+    fontSize: 10, marginTop: 3,
   },
 });

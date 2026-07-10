@@ -97,6 +97,7 @@ export interface ContactInput {
 
 export interface ContactsContextType {
     contacts: Contact[];
+    contactsLoading: boolean;
     fetchContacts: () => Promise<Contact[]>;
     createContact: (data: ContactInput) => Promise<Contact | null>;
     getContact: (id: string) => Promise<Contact | null>;
@@ -142,4 +143,10 @@ export interface ContactsContextType {
     searchAccountTypes: (query: string) => Promise<string[]>;
     importVcf: (content: string) => Promise<{ imported: number; skipped: number }>;
     searchContacts: (query: string) => Promise<Contact[]>;
+    // Sincronización entre dispositivos
+    syncing: boolean;
+    syncEnabled: boolean;
+    lastSyncAt: number | null;
+    setSyncEnabled: (enabled: boolean) => Promise<void>;
+    syncNow: () => Promise<{ changed: boolean; error?: string }>;
 }

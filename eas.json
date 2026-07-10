@@ -31,7 +31,17 @@
                 "buildType": "app-bundle"
             },
             "env": {
-                "APP_ENV": "production"
+                "APP_ENV": "production",
+                "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "461026464928-uqthqedb0oekcl2rgch1ggq9rkf6f3gq.apps.googleusercontent.com",
+                "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "461026464928-uqthqedb0oekcl2rgch1ggq9rkf6f3gq.apps.googleusercontent.com",
+                "EXPO_PUBLIC_ADMOB_APP_ID": "ca-app-pub-3940256099942544~3347511713",
+                "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+            }
+        },
+        "production-apk": {
+            "extends": "production",
+            "android": {
+                "buildType": "apk"
             }
         }
     },

@@ -236,6 +236,33 @@ ipcMain.handle('db:writeFromBase64', (_event, base64) => {
   }
 });
 
+// Sin updated_at en el schema de contacts, la fusión es sustitución completa.
+ipcMain.handle('db:mergeFromBase64', (_event, base64) => {
+  try {
+    const buffer = Buffer.from(base64, 'base64');
+    replaceDatabaseFromBuffer(buffer);
+    return { success: true };
+  } catch (e) {
+    return { error: e.message };
+  }
+});
+
+ipcMain.handle('db:signature', () => {
+  const tables = [
+    'contact', 'contact_phone', 'contact_email', 'contact_note',
+    'contact_url', 'contact_bank_account', 'contact_relationship',
+    'contact_keyword', 'national_identity_card', 'contact_organization',
+  ];
+  let total = 0;
+  for (const table of tables) {
+    try {
+      const row = db.prepare(`SELECT COUNT(*) c FROM ${table}`).get();
+      if (row) total += row.c;
+    } catch (_) {}
+  }
+  return String(total);
+});
+
 ipcMain.handle('auth:saveRefreshToken', (_event, token) => {
   saveRefreshToken(token);
 });
@@ -382,7 +409,7 @@ ipcMain.handle('db:getFirst', (_event, sql, params) => {
 
 function getDistPath() {
   return app.isPackaged
-    ? path.join(process.resourcesPath, 'app.asar', 'dist')
+    ? path.join(process.resourcesPath, 'dist')
     : path.join(__dirname, '..', 'dist');
 }
 
@@ -467,20 +494,23 @@ app.whenReady().then(() => {
     filePath = decodeURIComponent(filePath);
 
     const fullPath = path.join(distPath, filePath);
+    const ext = path.extname(filePath).toLowerCase();
 
-    // Si el archivo existe, servirlo; si no, servir index.html (SPA fallback)
-    const targetPath = fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()
-      ? fullPath
-      : path.join(distPath, 'index.html');
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+      const data = fs.readFileSync(fullPath);
+      return new Response(data, { headers: { 'Content-Type': contentType } });
+    }
 
-    const ext = path.extname(targetPath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    // Para assets con extensión (fonts, imágenes, etc.) devolver 404 en lugar de
+    // index.html — el browser no puede parsear HTML como font y useFonts quedaría bloqueado.
+    if (ext && ext !== '.html') {
+      return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
+    }
 
-    // Leer el archivo directamente (funciona dentro del asar) para poder
-    // establecer el Content-Type correcto. net.fetch con file:// no garantiza
-    // el MIME type, lo que hace que Electron rechace cargar fuentes (.ttf).
-    const data = fs.readFileSync(targetPath);
-    return new Response(data, { headers: { 'Content-Type': contentType } });
+    // SPA fallback: rutas de navegación sin archivo físico sirven index.html
+    const indexData = fs.readFileSync(path.join(distPath, 'index.html'));
+    return new Response(indexData, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   });
 
   try {

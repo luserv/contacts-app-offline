@@ -126,7 +126,8 @@ export function formatBirthdate(birthdate: string | null | undefined, lang: 'es'
     : `${MONTH_NAMES_EN[m - 1]} ${d}, ${y}`;
 }
 
-export function calcularEdad(birthdate: string, age: T['age']): string | null {
+export function calcularEdad(birthdate: string | null | undefined, age: T['age']): string | null {
+  if (!birthdate) return null;
   const parts = birthdate.split('/');
   if (parts.length !== 3) return null;
   const [day, month, year] = parts.map(Number);
