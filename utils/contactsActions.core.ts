@@ -3,6 +3,13 @@ import { toUpper } from './contactUtils';
 import type { CreateContactsActionsParams } from './contactsActionsShared';
 import type { Contact, ContactInput, ContactsContextType } from './contactsTypes';
 
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID().replace(/-/g, '');
+  }
+  return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+
 export function createContactsCoreActions({
     fetchContacts,
     normalizeContact,
@@ -12,7 +19,7 @@ export function createContactsCoreActions({
 > {
     const createContact = async (data: ContactInput) => {
         try {
-            const id = 'c' + Date.now();
+            const id = generateId();
             await db.runAsync(
                 'INSERT INTO contact (contact_id, first_name, middle_name, surname, birthdate, gender, status_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 id, toUpper(data.first_name), toUpper(data.middle_name), toUpper(data.surname), data.birthdate ?? null, data.gender ?? null, data.status_id ?? null
@@ -59,7 +66,7 @@ export function createContactsCoreActions({
     const updateContact = async (id: string, data: ContactInput): Promise<boolean> => {
         try {
             await db.runAsync(
-                'UPDATE contact SET first_name = ?, middle_name = ?, surname = ?, birthdate = ?, gender = ?, status_id = ? WHERE contact_id = ?',
+                "UPDATE contact SET first_name = ?, middle_name = ?, surname = ?, birthdate = ?, gender = ?, status_id = ?, updated_at = datetime('now') WHERE contact_id = ?",
                 toUpper(data.first_name), toUpper(data.middle_name), toUpper(data.surname), data.birthdate ?? null, data.gender ?? null, data.status_id ?? null, id
             );
             return true;

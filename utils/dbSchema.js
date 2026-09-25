@@ -14,6 +14,7 @@ const createTablesSql = `
     birthdate TEXT,
     gender TEXT CHECK(gender IN ('MALE', 'FEMALE')),
     status_id TEXT,
+    updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (status_id) REFERENCES marital_status (status_id)
   );
 
@@ -22,6 +23,7 @@ const createTablesSql = `
     contact_id TEXT NOT NULL,
     phone TEXT NOT NULL,
     label TEXT,
+    updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (contact_id) REFERENCES contact(contact_id)
   );
 
@@ -30,6 +32,7 @@ const createTablesSql = `
     contact_id TEXT NOT NULL,
     email TEXT NOT NULL,
     label TEXT,
+    updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (contact_id) REFERENCES contact(contact_id)
   );
 
@@ -40,6 +43,7 @@ const createTablesSql = `
     card_number TEXT NOT NULL,
     issue_date TEXT,
     expiry_date TEXT,
+    updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (contact_id) REFERENCES contact (contact_id)
   );
 
@@ -53,6 +57,7 @@ const createTablesSql = `
     contact_id TEXT NOT NULL,
     related_contact_id TEXT NOT NULL,
     type_id TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (contact_id) REFERENCES contact(contact_id),
     FOREIGN KEY (related_contact_id) REFERENCES contact(contact_id),
     FOREIGN KEY (type_id) REFERENCES relationship_type(type_id),
@@ -70,6 +75,7 @@ const createTablesSql = `
     organization_id TEXT NOT NULL,
     achievement TEXT NOT NULL,
     date TEXT,
+    updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (contact_id) REFERENCES contact(contact_id),
     FOREIGN KEY (organization_id) REFERENCES organization(organization_id)
   );
@@ -86,6 +92,7 @@ const createTablesSql = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     contact_id TEXT NOT NULL,
     note TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (contact_id) REFERENCES contact(contact_id)
   );
 
@@ -94,6 +101,7 @@ const createTablesSql = `
     contact_id TEXT NOT NULL,
     url TEXT NOT NULL,
     label TEXT,
+    updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (contact_id) REFERENCES contact(contact_id)
   );
 
@@ -104,8 +112,23 @@ const createTablesSql = `
     account_number TEXT NOT NULL,
     account_type TEXT,
     label TEXT,
+    updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (contact_id) REFERENCES contact(contact_id)
   );
+
+  CREATE INDEX IF NOT EXISTS idx_contact_phone_contact ON contact_phone(contact_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_email_contact ON contact_email(contact_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_note_contact ON contact_note(contact_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_url_contact ON contact_url(contact_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_keyword_contact ON contact_keyword(contact_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_keyword_keyword ON contact_keyword(keyword);
+  CREATE INDEX IF NOT EXISTS idx_identity_card_contact ON national_identity_card(contact_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_org_contact ON contact_organization(contact_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_org_org ON contact_organization(organization_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_bank_contact ON contact_bank_account(contact_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_relationship_contact ON contact_relationship(contact_id);
+  CREATE INDEX IF NOT EXISTS idx_contact_relationship_related ON contact_relationship(related_contact_id);
+  CREATE INDEX IF NOT EXISTS idx_organization_name ON organization(name);
 `;
 
 /**
@@ -127,6 +150,20 @@ const migrationsSql = [
     label TEXT,
     FOREIGN KEY (contact_id) REFERENCES contact(contact_id)
   )`,
+  "ALTER TABLE contact ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+  "ALTER TABLE contact_phone ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+  "ALTER TABLE contact_email ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+  "ALTER TABLE national_identity_card ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+  "ALTER TABLE contact_relationship ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+  "ALTER TABLE contact_organization ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+  "ALTER TABLE contact_note ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+  "ALTER TABLE contact_url ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+  "ALTER TABLE contact_bank_account ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+  // Se eliminó la búsqueda full-text: borrar sus triggers e índice de DBs existentes
+  'DROP TRIGGER IF EXISTS contact_ai',
+  'DROP TRIGGER IF EXISTS contact_ad',
+  'DROP TRIGGER IF EXISTS contact_au',
+  'DROP TABLE IF EXISTS contact_fts',
 ];
 
 const seedSql = `
@@ -141,4 +178,14 @@ const seedSql = `
     ('primo','Primo'),('prima','Prima'),('conyuge','Cónyuge'),('nieto','Nieto'),('nieta','Nieta');
 `;
 
-module.exports = { createTablesSql, migrationsSql, seedSql };
+/**
+ * Tablas involucradas en sincronización entre dispositivos.
+ * Fuente única de verdad — usar en db.ts, db.native.ts y electron/main.js.
+ */
+const SYNC_TABLES = [
+  'contact', 'contact_phone', 'contact_email', 'contact_note',
+  'contact_url', 'contact_bank_account', 'contact_relationship',
+  'contact_keyword', 'national_identity_card', 'contact_organization',
+];
+
+module.exports = { createTablesSql, migrationsSql, seedSql, SYNC_TABLES };

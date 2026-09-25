@@ -47,7 +47,7 @@ export function createContactsChannelActions(): Pick<
 
     const updateContactPhone = async (id: number, phone: string, label?: string): Promise<boolean> => {
         try {
-            await db.runAsync('UPDATE contact_phone SET phone = ?, label = ? WHERE id = ?', phone, toUpper(label), id);
+            await db.runAsync("UPDATE contact_phone SET phone = ?, label = ?, updated_at = datetime('now') WHERE id = ?", phone, toUpper(label), id);
             return true;
         } catch (e) { console.error(e); return false; }
     };
@@ -77,7 +77,7 @@ export function createContactsChannelActions(): Pick<
 
     const updateContactEmail = async (id: number, email: string, label?: string): Promise<boolean> => {
         try {
-            await db.runAsync('UPDATE contact_email SET email = ?, label = ? WHERE id = ?', email, toUpper(label), id);
+            await db.runAsync("UPDATE contact_email SET email = ?, label = ?, updated_at = datetime('now') WHERE id = ?", email, toUpper(label), id);
             return true;
         } catch (e) { console.error(e); return false; }
     };
