@@ -203,8 +203,8 @@ function needsGenderMigration(contactTableSql) {
 
 /**
  * Statements that rebuild `contact` with uppercase gender values.
- * Known drift: utils/dbInit.ts keeps `updated_at`, while Electron historically
- * rebuilt the table without it. `keepUpdatedAt` preserves each behavior.
+ * Electron historically rebuilt the table without `updated_at`; it now keeps it,
+ * like utils/dbInit.ts. `keepUpdatedAt: true` requires the column to exist.
  * @param {{ keepUpdatedAt: boolean }} options
  * @returns {string[]}
  */
@@ -245,6 +245,20 @@ const MERGE_TABLES = [
   'contact_url', 'contact_bank_account', 'contact_relationship',
   'national_identity_card', 'contact_organization',
 ];
+
+/**
+ * Statements that add a nullable `updated_at` to merge tables that lack it.
+ * Legacy DBs may miss the column (the `migrationsSql` ADD COLUMN uses a
+ * non-constant default, which SQLite rejects). NULL means "unknown age", so
+ * the remote row wins on the next merge, matching `shouldTakeRemoteRow`.
+ * @param {(table: string) => string[]} columnsOf Column names of a local table.
+ * @returns {string[]}
+ */
+function missingUpdatedAtStatements(columnsOf) {
+  return MERGE_TABLES
+    .filter(table => !columnsOf(table).includes('updated_at'))
+    .map(table => `ALTER TABLE ${table} ADD COLUMN updated_at TEXT`);
+}
 
 /** @typedef {Record<string, unknown>} Row */
 
@@ -378,6 +392,7 @@ module.exports = {
   needsGenderMigration,
   genderMigrationStatements,
   MERGE_TABLES,
+  missingUpdatedAtStatements,
   mergeIdColumn,
   shouldTakeRemoteRow,
   mergeRemoteRows,

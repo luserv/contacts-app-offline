@@ -103,3 +103,22 @@ test('computeSyncSignature sums row counts and skips tables that fail', () => {
   });
   assert.equal(signature, String((schema.SYNC_TABLES.length - 1) * 2));
 });
+
+test('missingUpdatedAtStatements adds a nullable updated_at only where it is missing', () => {
+  const db = new SQL.Database();
+  db.exec('CREATE TABLE contact (contact_id TEXT PRIMARY KEY, first_name TEXT)');
+  db.run(`INSERT INTO contact VALUES ('c1', 'Ana')`);
+  for (const table of schema.MERGE_TABLES.filter(t => t !== 'contact')) {
+    db.exec(`CREATE TABLE ${table} (id TEXT PRIMARY KEY, updated_at TEXT)`);
+  }
+
+  const statements = schema.missingUpdatedAtStatements(table => columnsOf(db, table));
+  assert.deepEqual(statements, ['ALTER TABLE contact ADD COLUMN updated_at TEXT']);
+
+  for (const sql of statements) db.exec(sql);
+  const localUpdatedAt = db.exec(`SELECT updated_at FROM contact WHERE contact_id = 'c1'`)[0].values[0][0];
+  assert.equal(localUpdatedAt, null);
+  assert.equal(schema.shouldTakeRemoteRow(localUpdatedAt, '2024-01-01'), true);
+  assert.deepEqual(schema.missingUpdatedAtStatements(table => columnsOf(db, table)), []);
+  db.close();
+});

@@ -10,6 +10,7 @@ const {
   seedSql,
   needsGenderMigration,
   genderMigrationStatements,
+  missingUpdatedAtStatements,
   mergeRemoteRows,
   computeSyncSignature,
 } = require('../utils/dbSchema');
@@ -67,12 +68,22 @@ function runGenderMigration(database) {
     if (!needsGenderMigration(schemaRow?.sql)) return;
 
     database.pragma('foreign_keys = OFF');
-    // Preserves Electron's historical rebuild without `updated_at` (see dbSchema.js).
-    for (const sql of genderMigrationStatements({ keepUpdatedAt: false })) database.exec(sql);
+    for (const sql of genderMigrationStatements({ keepUpdatedAt: true })) database.exec(sql);
     database.pragma('foreign_keys = ON');
   } catch (_) {
     try { database.pragma('foreign_keys = ON'); } catch (_) {}
   }
+}
+
+/**
+ * Merge reads `updated_at` from every merge table; legacy desktop DBs can lack it.
+ * @param {SqliteDatabase} database
+ */
+function ensureUpdatedAtColumns(database) {
+  const columnsOf = (/** @type {string} */ table) =>
+    /** @type {{ name: string }[]} */ (database.prepare(`PRAGMA table_info(${table})`).all())
+      .map(column => column.name);
+  for (const sql of missingUpdatedAtStatements(columnsOf)) database.exec(sql);
 }
 
 /** @param {SqliteDatabase} database */
@@ -106,6 +117,8 @@ function initDB() {
     try { database.exec(sql); } catch (_) {}
   }
 
+  // Before the gender rebuild, which copies `updated_at` from the old table.
+  ensureUpdatedAtColumns(database);
   runGenderMigration(database);
 
   database.exec(seedSql);
@@ -211,6 +224,7 @@ function mergeDatabaseFromBase64(base64) {
   const remoteDb = openSqliteFile(snapshotPath);
 
   try {
+    ensureUpdatedAtColumns(localDb);
     localDb.pragma('foreign_keys = OFF');
     mergeRemoteRows(betterSqliteMergeTarget(localDb, remoteDb));
     localDb.pragma('foreign_keys = ON');
