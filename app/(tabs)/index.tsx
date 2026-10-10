@@ -286,14 +286,14 @@ export default function HomeScreen() {
         headerShadowVisible: false,
         headerRight: () => (
           <View style={{ flexDirection: 'row', gap: 20, marginRight: 4 }}>
-            <Pressable onPress={handleRefresh} hitSlop={8}>
-              <Ionicons name="refresh" size={20} color="#007AFF" />
+            <Pressable onPress={handleRefresh} hitSlop={8} accessibilityLabel="Refresh">
+              <Ionicons name="refresh" size={20} color={colors.accent} />
             </Pressable>
-            <Pressable onPress={() => setFilterModalVisible(true)} hitSlop={8}>
-              <Ionicons name="filter" size={20} color="#007AFF" />
+            <Pressable onPress={() => setFilterModalVisible(true)} hitSlop={8} accessibilityLabel={t.contactList.filters}>
+              <Ionicons name="filter" size={20} color={colors.accent} />
             </Pressable>
-            <Pressable onPress={() => setSortModalVisible(true)} hitSlop={8}>
-              <Ionicons name="swap-vertical" size={20} color="#007AFF" />
+            <Pressable onPress={() => setSortModalVisible(true)} hitSlop={8} accessibilityLabel={t.contactList.sortBy}>
+              <Ionicons name="swap-vertical" size={20} color={colors.accent} />
             </Pressable>
           </View>
         ),
@@ -303,7 +303,7 @@ export default function HomeScreen() {
         {/* Search bar */}
         <View style={[styles.searchWrap, isDesktop && styles.searchWrapDesktop, { backgroundColor: colors.bg }]}>
           <View style={[styles.searchContainer, isDesktop && styles.searchContainerDesktop, { backgroundColor: colors.fill }]}>
-            <Ionicons name="search" size={16} color={colors.textSecondary} style={styles.searchIcon} />
+            <Ionicons name="search" size={16} color={colors.placeholder} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
               placeholder={t.contacts.searchHint}
@@ -311,10 +311,11 @@ export default function HomeScreen() {
               onChangeText={setSearchQuery}
               placeholderTextColor={colors.placeholder}
               autoCapitalize="none"
+              returnKeyType="search"
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <Ionicons name="close-circle" size={17} color="#8E8E93" />
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={10} style={styles.clearBtn}>
+                <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
               </Pressable>
             )}
           </View>
@@ -324,26 +325,26 @@ export default function HomeScreen() {
           <View style={[styles.activeFilterRow, isDesktop && styles.activeFilterRowDesktop]}>
             {chips.map((chip, i) => (
               <React.Fragment key={i}>
-                {i > 0 && <Text style={styles.chipAnd}>&amp;</Text>}
-                <View style={styles.activeFilterChip}>
-                  <Text style={styles.activeFilterText}>{chip}</Text>
+                {i > 0 && <Text style={[styles.chipAnd, { color: colors.textSecondary }]}>&amp;</Text>}
+                <View style={[styles.activeFilterChip, { backgroundColor: colors.accentSubtle }]}>
+                  <Text style={[styles.activeFilterText, { color: colors.accent }]}>{chip}</Text>
                 </View>
               </React.Fragment>
             ))}
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-              <Ionicons name="close" size={14} color="#FF3B30" />
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={15} style={{ padding: 4 }}>
+              <Ionicons name="close" size={14} color={colors.destructive} />
             </Pressable>
           </View>
         )}
 
-        <Text style={[styles.contactCount, isDesktop && styles.contactCountDesktop]}>
+        <Text style={[styles.contactCount, isDesktop && styles.contactCountDesktop, { color: colors.textSecondary }]}>
           {filteredContacts.length} {filteredContacts.length === 1 ? t.contactList.contact : t.contactList.contacts}
         </Text>
 
         <View style={{ flex: 1 }}>
           {contactsLoading && (
             <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color="#007AFF" />
+              <ActivityIndicator size="large" color={colors.accent} />
             </View>
           )}
           <SectionList
@@ -406,7 +407,7 @@ export default function HomeScreen() {
                     </>
                   ) : null}
                 </View>
-                <Ionicons name="chevron-forward" size={17} color="#C7C7CC" />
+                <Ionicons name="chevron-forward" size={17} color={colors.textTertiary} />
               </Pressable>
             )}
             ListEmptyComponent={() => (
@@ -417,7 +418,7 @@ export default function HomeScreen() {
             contentContainerStyle={[styles.listContent, isDesktop && styles.listContentDesktop]}
           />
 
-          <Pressable style={[styles.fab, isDesktop && styles.fabDesktop]} onPress={handleOpenModal}>
+          <Pressable style={[styles.fab, isDesktop && styles.fabDesktop, { backgroundColor: colors.accent, shadowColor: colors.accent }]} onPress={handleOpenModal} accessibilityLabel={t.contacts.newContact}>
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </Pressable>
         </View>
@@ -445,7 +446,7 @@ export default function HomeScreen() {
                   <Text style={[styles.actionSheetItemText, { color: colors.text }, sortKey === opt.key && styles.actionSheetItemActive]}>
                     {(t.contactList as any)[opt.transKey]}
                   </Text>
-                  {sortKey === opt.key && <Ionicons name="checkmark" size={18} color="#007AFF" />}
+                  {sortKey === opt.key && <Ionicons name="checkmark" size={18} color={colors.accent} />}
                 </Pressable>
               </React.Fragment>
             ))}
@@ -616,7 +617,7 @@ export default function HomeScreen() {
                 placeholder={t.contacts.firstNamePlaceholder}
                 value={firstName}
                 onChangeText={setFirstName}
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={colors.placeholder}
               />
 
               <Text style={styles.fieldLabel}>{t.contacts.middleName}</Text>
@@ -625,7 +626,7 @@ export default function HomeScreen() {
                 placeholder={t.contacts.middleNamePlaceholder}
                 value={middleName}
                 onChangeText={setMiddleName}
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={colors.placeholder}
               />
 
               <Text style={styles.fieldLabel}>{t.contacts.surname} <Text style={styles.required}>{t.common.required}</Text></Text>
@@ -634,7 +635,7 @@ export default function HomeScreen() {
                 placeholder={t.contacts.surnamePlaceholder}
                 value={surname}
                 onChangeText={setSurname}
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={colors.placeholder}
               />
 
               <Text style={styles.fieldLabel}>{t.contacts.gender}</Text>
@@ -658,7 +659,7 @@ export default function HomeScreen() {
                 placeholder={t.contacts.birthdatePlaceholder}
                 value={birthdate}
                 onChangeText={formatBirthdate}
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={colors.placeholder}
                 keyboardType={Platform.OS === 'web' ? 'default' : 'numeric'}
                 maxLength={10}
               />
@@ -673,7 +674,7 @@ export default function HomeScreen() {
 
               <Pressable style={styles.docToggle} onPress={() => setHasDoc(v => !v)}>
                 <View style={[styles.docToggleBox, hasDoc && styles.docToggleBoxActive]}>
-                  {hasDoc && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  {hasDoc && <Ionicons name="checkmark" size={14} color={colors.surface} />}
                 </View>
                 <Text style={styles.docToggleLabel}>{t.contacts.hasDoc}</Text>
               </Pressable>
@@ -693,7 +694,7 @@ export default function HomeScreen() {
                     placeholder={t.contacts.docNumberPlaceholder}
                     value={cardNumber}
                     onChangeText={setCardNumber}
-                    placeholderTextColor="#C7C7CC"
+                    placeholderTextColor={colors.placeholder}
                     autoCapitalize="characters"
                   />
                 </>
@@ -730,27 +731,28 @@ const styles = StyleSheet.create({
   // Search
   searchWrap: {
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 8,
-    backgroundColor: '#F2F2F7',
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   searchWrapDesktop: { paddingHorizontal: 32 },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(118,118,128,0.12)',
     borderRadius: 10,
-    paddingHorizontal: 10,
-    height: 36,
+    paddingHorizontal: 12,
+    height: 44,
   },
   searchContainerDesktop: { maxWidth: 600 },
-  searchIcon: { marginRight: 6 },
+  searchIcon: { marginRight: 8 },
   searchInput: {
     flex: 1,
-    fontSize: 17,
-    color: '#000',
-    paddingHorizontal: 0,
+    fontSize: 16,
     paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  clearBtn: {
+    marginLeft: 6,
+    padding: 2,
   },
 
   // Filter chips row
@@ -764,16 +766,15 @@ const styles = StyleSheet.create({
   },
   activeFilterRowDesktop: { marginHorizontal: 32 },
   activeFilterChip: {
-    backgroundColor: 'rgba(0,122,255,0.1)',
     borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  activeFilterText: { fontSize: 13, color: '#007AFF', fontWeight: '600' },
-  chipAnd: { fontSize: 12, color: '#8E8E93', fontWeight: '700' },
+  activeFilterText: { fontSize: 13, fontWeight: '600' },
+  chipAnd: { fontSize: 12, fontWeight: '700' },
 
   // Count
-  contactCount: { fontSize: 12, color: '#8E8E93', marginHorizontal: 16, marginBottom: 4 },
+  contactCount: { fontSize: 12, marginHorizontal: 16, marginBottom: 4 },
   contactCountDesktop: { marginHorizontal: 32 },
 
   // Section headers
@@ -846,9 +847,8 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute', right: 20, bottom: 32,
     width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#007AFF',
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35, shadowRadius: 8, elevation: 6,
   },
   fabDesktop: { right: 32, width: 60, height: 60, borderRadius: 30 },

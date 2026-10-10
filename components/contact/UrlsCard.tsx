@@ -3,6 +3,7 @@ import { Alert, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, Style
 import { ContactUrl, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import { useTheme } from '../../utils/theme';
 
 interface Props {
   contactId: string;
@@ -11,6 +12,7 @@ interface Props {
 
 export default function UrlsCard({ contactId, initialUrls }: Props) {
   const s = useSharedStyles();
+  const { colors } = useTheme();
   const { t } = useI18n();
   const { getContactUrls, addContactUrl, removeContactUrl } = useContacts();
 
@@ -91,7 +93,7 @@ export default function UrlsCard({ contactId, initialUrls }: Props) {
                 value={urlInput}
                 onChangeText={setUrlInput}
                 placeholder={t.urls.urlPlaceholder}
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={colors.placeholder}
                 autoCapitalize="none"
                 keyboardType="url"
                 autoFocus
@@ -103,7 +105,7 @@ export default function UrlsCard({ contactId, initialUrls }: Props) {
                 value={labelInput}
                 onChangeText={setLabelInput}
                 placeholder={t.urls.labelPlaceholder}
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={colors.placeholder}
               />
 
               <View style={s.modalActions}>

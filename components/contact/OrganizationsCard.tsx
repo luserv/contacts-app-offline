@@ -4,6 +4,7 @@ import { ContactOrganization, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { edadEnFecha, formatDate } from '../../utils/contactUtils';
 import { useSharedStyles } from './contactStyles';
+import { useTheme } from '../../utils/theme';
 
 interface Props {
   contactId: string;
@@ -13,6 +14,7 @@ interface Props {
 
 export default function OrganizationsCard({ contactId, birthdate, initialOrganizations }: Props) {
   const s = useSharedStyles();
+  const { colors } = useTheme();
   const { t } = useI18n();
   const { getContactOrganizations, addContactOrganization, updateContactOrganization, removeContactOrganization, searchOrganizations, searchAchievements } = useContacts();
 
@@ -135,9 +137,9 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
                       const e = edadEnFecha(birthdate, org.date);
                       if (!e) return '';
                       const parts = [];
-                      if (e.years > 0) parts.push(`${e.years} ${e.years === 1 ? 'year' : 'years'}`);
-                      if (e.months > 0) parts.push(`${e.months} ${e.months === 1 ? 'month' : 'months'}`);
-                      if (e.days > 0) parts.push(`${e.days} ${e.days === 1 ? 'day' : 'days'}`);
+                      if (e.years > 0) parts.push(t.age.years(e.years));
+                      if (e.months > 0) parts.push(t.age.months(e.months));
+                      if (e.days > 0) parts.push(t.age.days(e.days));
                       return parts.length ? ` · ${parts.join(', ')}` : '';
                     })()}
                   </Text>
@@ -166,7 +168,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
               <Text style={s.fieldLabel}>{t.organizations.orgName} <Text style={s.required}>{t.common.required}</Text></Text>
               <TextInput
                 style={s.input} value={orgName} onChangeText={handleNameChange}
-                placeholder={t.organizations.orgName} placeholderTextColor="#C7C7CC"
+                placeholder={t.organizations.orgName} placeholderTextColor={colors.placeholder}
               />
               {suggestions.length > 0 && (
                 <View style={styles.suggestions}>
@@ -181,7 +183,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
               <Text style={s.fieldLabel}>{t.organizations.achievement}</Text>
               <TextInput
                 style={s.input} value={achievement} onChangeText={handleAchievementChange}
-                placeholder={t.organizations.achievementPlaceholder} placeholderTextColor="#C7C7CC"
+                placeholder={t.organizations.achievementPlaceholder} placeholderTextColor={colors.placeholder}
               />
               {achievementSuggestions.length > 0 && (
                 <View style={styles.suggestions}>
@@ -197,7 +199,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
               <TextInput
                 style={s.input} value={date}
                 onChangeText={v => formatDate(v, setDate)}
-                placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor="#C7C7CC"
+                placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor={colors.placeholder}
                 keyboardType="numeric" maxLength={10}
               />
             </ScrollView>

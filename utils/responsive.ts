@@ -6,11 +6,12 @@ export const BREAKPOINTS = {
 } as const;
 
 export function useResponsive() {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   const isMobile = width < BREAKPOINTS.mobile;
   const isTablet = width >= BREAKPOINTS.mobile && width < BREAKPOINTS.tablet;
   const isDesktop = width >= BREAKPOINTS.tablet;
+  const isLandscape = width > height;
 
   const r = <T,>(mobile: T, tablet: T, desktop: T): T => {
     if (isDesktop) return desktop;
@@ -21,5 +22,5 @@ export function useResponsive() {
   const numCols = r(1, 2, 3);
   const contentMaxWidth = 1200;
 
-  return { width, isMobile, isTablet, isDesktop, r, numCols, contentMaxWidth };
+  return { width, height, isMobile, isTablet, isDesktop, isLandscape, r, numCols, contentMaxWidth };
 }

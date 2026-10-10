@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.5 },
   buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   buttonUpgrade: { backgroundColor: '#007AFF' },
-  buttonRestore: { alignItems: 'center', paddingVertical: 10 },
+  buttonRestore: { alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center' },
   buttonRestoreText: { fontSize: 14, color: '#007AFF' },
   themeRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   themeBtn: {

@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.6 },
   googleBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   googleHint: { fontSize: 12, color: '#8E8E93', textAlign: 'center', marginBottom: 16 },
-  guestBtn: { width: '100%', alignItems: 'center', paddingVertical: 12, marginBottom: 8 },
+  guestBtn: { width: '100%', alignItems: 'center', paddingVertical: 16, marginBottom: 8, minHeight: 44, justifyContent: 'center' },
   guestBtnText: { color: '#007AFF', fontSize: 15, fontWeight: '500' },
   error: { color: '#FF3B30', fontSize: 13, textAlign: 'center', marginBottom: 12 },
   disclaimer: { fontSize: 12, color: '#C7C7CC', textAlign: 'center', marginTop: 8 },

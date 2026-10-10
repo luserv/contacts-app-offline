@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../utils/i18n';
+import { useTheme } from '../utils/theme';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, {
     FadeIn,
@@ -27,6 +28,7 @@ interface Props {
 
 export function SwipeableNote({ note, onPress, onDelete }: Props) {
   const { t } = useI18n();
+  const { colors } = useTheme();
   const RightAction = (
     prog: SharedValue<number>,
     drag: SharedValue<number>
@@ -44,7 +46,7 @@ export function SwipeableNote({ note, onPress, onDelete }: Props) {
         }}
       >
         <Reanimated.View style={[styleAnimation, styles.rightAction]}>
-          <Ionicons name="trash" size={24} color="red" />
+          <Ionicons name="trash" size={24} color={colors.destructive} />
         </Reanimated.View>
       </Pressable>
     );
@@ -73,16 +75,16 @@ export function SwipeableNote({ note, onPress, onDelete }: Props) {
           onPress={() => {
             onPress();
           }}
-          style={styles.swipeable}
+          style={[styles.swipeable, { backgroundColor: colors.surface, shadowColor: colors.text }]}
         >
           <View style={styles.content}>
-            <Text style={styles.noteTitle}>
+            <Text style={[styles.noteTitle, { color: colors.text }]}>
               {note.title || t.common.untitledNote}
             </Text>
-            <Text style={styles.noteDate}>
+            <Text style={[styles.noteDate, { color: colors.textSecondary }]}>
               {format(note.modifiedDate || new Date(), 'MMM d, yyyy')}
             </Text>
-            <Text style={styles.notePreview} numberOfLines={2}>
+            <Text style={[styles.notePreview, { color: colors.textSecondary }]} numberOfLines={2}>
               {note.content || t.common.noAdditionalText}
             </Text>
           </View>
@@ -102,12 +104,10 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 16,
     borderRadius: 16,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 2,
-    backgroundColor: 'white',
   },
   rightAction: {
     width: 60,
@@ -123,17 +123,14 @@ const styles = StyleSheet.create({
   noteTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 4,
   },
   noteDate: {
     fontSize: 13,
-    color: '#8E8E93',
     marginBottom: 6,
   },
   notePreview: {
     fontSize: 15,
-    color: '#3C3C43',
     opacity: 0.6,
   },
 });

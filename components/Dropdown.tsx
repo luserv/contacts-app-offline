@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import {
   FlatList,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useResponsive } from '../utils/responsive';
 import { useTheme } from '../utils/theme';
 import { useI18n } from '../utils/i18n';
 
@@ -35,6 +37,7 @@ export default function Dropdown({
   const [open, setOpen] = useState(false);
   const { t } = useI18n();
   const { colors } = useTheme();
+  const { isDesktop, isTablet } = useResponsive();
   const ph = placeholder ?? t.common.select;
   const nl = nullLabel ?? t.common.unspecified;
 
@@ -67,8 +70,8 @@ export default function Dropdown({
         animationType="fade"
         onRequestClose={() => setOpen(false)}
       >
-        <Pressable style={[styles.overlay, { backgroundColor: colors.overlay }]} onPress={() => setOpen(false)}>
-          <View style={[styles.sheet, { backgroundColor: colors.surface }]} accessibilityViewIsModal={true}>
+        <Pressable style={[styles.overlay, (isDesktop || isTablet) && styles.overlayCentered, { backgroundColor: colors.overlay }]} onPress={() => setOpen(false)}>
+          <View style={[styles.sheet, (isDesktop || isTablet) && styles.sheetCentered, { backgroundColor: colors.surface }]} accessibilityViewIsModal={true}>
             <View style={[styles.handle, { backgroundColor: colors.separator }]} />
 
             <FlatList
@@ -118,6 +121,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  overlayCentered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   sheet: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -125,6 +132,12 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     paddingTop: 12,
     maxHeight: '60%',
+  },
+  sheetCentered: {
+    borderRadius: 14,
+    maxWidth: 400,
+    width: '100%',
+    maxHeight: '50%',
   },
   handle: {
     width: 40,

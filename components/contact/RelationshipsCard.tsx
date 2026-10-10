@@ -3,6 +3,7 @@ import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Styl
 import { Relationship, RelationshipType, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import { useTheme } from '../../utils/theme';
 
 interface Props {
   contactId: string;
@@ -12,6 +13,7 @@ interface Props {
 
 export default function RelationshipsCard({ contactId, initialRelationships, onNavigate }: Props) {
   const s = useSharedStyles();
+  const { colors } = useTheme();
   const { t } = useI18n();
   const { getRelationships, addRelationship, removeRelationship, getRelationshipTypes, contacts } = useContacts();
 
@@ -149,7 +151,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
                   placeholder={t.relationships.search}
                   value={search}
                   onChangeText={setSearch}
-                  placeholderTextColor="#8E8E93"
+                  placeholderTextColor={colors.placeholder}
                 />
                 <FlatList
                   data={available}

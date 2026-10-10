@@ -3,6 +3,7 @@ import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 import { ContactKeyword, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import { useTheme } from '../../utils/theme';
 
 interface Props {
   contactId: string;
@@ -11,6 +12,7 @@ interface Props {
 
 export default function KeywordsCard({ contactId, initialKeywords }: Props) {
   const s = useSharedStyles();
+  const { colors } = useTheme();
   const { t } = useI18n();
   const { getContactKeywords, addContactKeyword, removeContactKeyword } = useContacts();
 
@@ -90,7 +92,7 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
               value={input}
               onChangeText={setInput}
               placeholder={t.keywords.placeholder}
-              placeholderTextColor="#C7C7CC"
+              placeholderTextColor={colors.placeholder}
               onSubmitEditing={handleAdd}
               onBlur={handleAdd}
               returnKeyType="done"

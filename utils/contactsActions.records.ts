@@ -10,6 +10,13 @@ import type {
     MaritalStatus,
 } from './contactsTypes';
 
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID().replace(/-/g, '');
+  }
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+
 export function createContactsRecordActions({
     fetchContacts,
 }: CreateContactsActionsParams): Pick<
@@ -268,7 +275,7 @@ export function createContactsRecordActions({
 
         for (const card of cards) {
             try {
-                const id = 'c' + Date.now() + Math.random().toString(36).slice(2, 6);
+                const id = generateId();
                 await db.runAsync(
                     'INSERT INTO contact (contact_id, first_name, middle_name, surname, birthdate) VALUES (?, ?, ?, ?, ?)',
                     id, toUpper(card.first_name), toUpper(card.middle_name), toUpper(card.surname), card.birthdate ?? null

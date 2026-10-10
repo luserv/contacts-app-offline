@@ -3,6 +3,7 @@ import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, St
 import { ContactBankAccount, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import { useTheme } from '../../utils/theme';
 
 interface Props {
   contactId: string;
@@ -11,6 +12,7 @@ interface Props {
 
 export default function BankAccountCard({ contactId, initialAccounts }: Props) {
   const s = useSharedStyles();
+  const { colors } = useTheme();
   const { t } = useI18n();
   const { getBankAccounts, addBankAccount, updateBankAccount, deleteBankAccount, searchBanks, searchAccountTypes } = useContacts();
 
@@ -146,7 +148,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
               <Text style={s.fieldLabel}>{t.bankAccounts.bankName}</Text>
               <TextInput
                 style={s.input} value={bankName} onChangeText={handleBankNameChange}
-                placeholder={t.bankAccounts.bankNamePlaceholder} placeholderTextColor="#C7C7CC"
+                placeholder={t.bankAccounts.bankNamePlaceholder} placeholderTextColor={colors.placeholder}
                 autoCapitalize="characters" autoFocus
               />
               {bankSuggestions.length > 0 && (
@@ -164,14 +166,14 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
               </Text>
               <TextInput
                 style={s.input} value={accountNumber} onChangeText={setAccountNumber}
-                placeholder="0000-0000-0000-0000" placeholderTextColor="#C7C7CC"
+                placeholder="0000-0000-0000-0000" placeholderTextColor={colors.placeholder}
                 keyboardType="numeric"
               />
 
               <Text style={s.fieldLabel}>{t.bankAccounts.accountType}</Text>
               <TextInput
                 style={s.input} value={accountType} onChangeText={handleAccountTypeChange}
-                placeholder={t.bankAccounts.accountTypePlaceholder} placeholderTextColor="#C7C7CC"
+                placeholder={t.bankAccounts.accountTypePlaceholder} placeholderTextColor={colors.placeholder}
               />
               {typeSuggestions.length > 0 && (
                 <View style={styles.suggestions}>
@@ -186,7 +188,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
               <Text style={s.fieldLabel}>{t.bankAccounts.label}</Text>
               <TextInput
                 style={s.input} value={label} onChangeText={setLabel}
-                placeholder={t.bankAccounts.labelPlaceholder} placeholderTextColor="#C7C7CC"
+                placeholder={t.bankAccounts.labelPlaceholder} placeholderTextColor={colors.placeholder}
               />
 
             </ScrollView>

@@ -6,6 +6,7 @@ import { MaritalStatus, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { ContactDetail, formatDate } from '../../utils/contactUtils';
 import { useSharedStyles } from './contactStyles';
+import { useTheme } from '../../utils/theme';
 
 interface Props {
   visible: boolean;
@@ -16,6 +17,7 @@ interface Props {
 
 export default function EditContactModal({ visible, contact, onClose, onSaved }: Props) {
   const s = useSharedStyles();
+  const { colors } = useTheme();
   const { t } = useI18n();
   const { getMaritalStatuses, updateContact, getContact } = useContacts();
   const insets = useSafeAreaInsets();
@@ -78,13 +80,13 @@ export default function EditContactModal({ visible, contact, onClose, onSaved }:
             >
 
               <Text style={s.fieldLabel}>{t.contacts.firstName} <Text style={s.required}>{t.common.required}</Text></Text>
-              <TextInput style={s.input} value={firstName} onChangeText={setFirstName} placeholderTextColor="#C7C7CC" placeholder={t.contacts.firstName} />
+              <TextInput style={s.input} value={firstName} onChangeText={setFirstName} placeholderTextColor={colors.placeholder} placeholder={t.contacts.firstName} />
 
               <Text style={s.fieldLabel}>{t.contacts.middleName}</Text>
-              <TextInput style={s.input} value={middleName} onChangeText={setMiddleName} placeholderTextColor="#C7C7CC" placeholder={t.contacts.middleName} />
+              <TextInput style={s.input} value={middleName} onChangeText={setMiddleName} placeholderTextColor={colors.placeholder} placeholder={t.contacts.middleName} />
 
               <Text style={s.fieldLabel}>{t.contacts.surname} <Text style={s.required}>{t.common.required}</Text></Text>
-              <TextInput style={s.input} value={surname} onChangeText={setSurname} placeholderTextColor="#C7C7CC" placeholder={t.contacts.surname} />
+              <TextInput style={s.input} value={surname} onChangeText={setSurname} placeholderTextColor={colors.placeholder} placeholder={t.contacts.surname} />
 
               <Text style={s.fieldLabel}>{t.contacts.gender}</Text>
               <View style={styles.genderRow}>
@@ -104,7 +106,7 @@ export default function EditContactModal({ visible, contact, onClose, onSaved }:
               <Text style={s.fieldLabel}>{t.contacts.birthdate}</Text>
               <TextInput
                 style={s.input} value={birthdate} onChangeText={v => formatDate(v, setBirthdate)}
-                placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor="#C7C7CC"
+                placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor={colors.placeholder}
                 keyboardType={Platform.OS === 'web' ? 'default' : 'numeric'} maxLength={10}
               />
 

@@ -97,14 +97,14 @@ export default function ContactDetailScreen() {
   };
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#007AFF" /></View>;
+    return <View style={styles.center}><ActivityIndicator size="large" color={colors.accent} /></View>;
   }
 
   if (error || !contact) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorText}>{error || t.detail.notFound}</Text>
-        <Link href="../" style={styles.backLink}>{t.detail.back}</Link>
+        <Text style={[styles.errorText, { color: colors.destructive }]}>{error || t.detail.notFound}</Text>
+        <Link href="../" style={[styles.backLink, { color: colors.accent }]}>{t.detail.back}</Link>
       </View>
     );
   }
@@ -161,8 +161,8 @@ export default function ContactDetailScreen() {
             return (
               <View style={styles.zodiacRow}>
                 {symbol ? <Text style={styles.zodiacSymbol}>{symbol}</Text> : null}
-                <Text style={styles.zodiacName}>{z.name}</Text>
-                <Text style={styles.zodiacDesc}>{z.description}</Text>
+                <Text style={[styles.zodiacName, { color: colors.textSecondary }]}>{z.name}</Text>
+                <Text style={[styles.zodiacDesc, { color: colors.textSecondary }]}>{z.description}</Text>
               </View>
             );
           })()}

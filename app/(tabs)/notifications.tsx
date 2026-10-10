@@ -324,8 +324,9 @@ const styles = StyleSheet.create({
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16,
+    paddingHorizontal: 14, paddingVertical: 14, borderRadius: 16,
     borderWidth: 1, borderColor: '#C7C7CC', backgroundColor: '#F9F9F9',
+    minHeight: 44, justifyContent: 'center',
   },
   chipActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
   chipText: { fontSize: 13, color: '#555' },

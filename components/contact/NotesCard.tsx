@@ -3,6 +3,7 @@ import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Te
 import { ContactNote, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import { useTheme } from '../../utils/theme';
 
 interface Props {
   contactId: string;
@@ -11,6 +12,7 @@ interface Props {
 
 export default function NotesCard({ contactId, initialNotes }: Props) {
   const s = useSharedStyles();
+  const { colors } = useTheme();
   const { t } = useI18n();
   const { getContactNotes, addContactNote, removeContactNote } = useContacts();
 
@@ -79,7 +81,7 @@ export default function NotesCard({ contactId, initialNotes }: Props) {
                 value={input}
                 onChangeText={setInput}
                 placeholder={t.notes.placeholder}
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={colors.placeholder}
                 multiline
                 numberOfLines={4}
                 autoFocus

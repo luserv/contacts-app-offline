@@ -47,14 +47,14 @@ async function resolvePhoneActions(phone: string, labels: { callPhone: string; s
       key: 'whatsapp',
       label: labels.whatsapp,
       color: '#25D366',
-      url: `whatsapp://send?phone=${normalized}`,
+      url: `whatsapp://send?phone=${digitsOnly}`,
       webUrl: `https://wa.me/${digitsOnly}`,
     },
     {
       key: 'whatsappBusiness',
       label: labels.whatsappBusiness,
       color: '#25D366',
-      url: `whatsappbusiness://send?phone=${normalized}`,
+      url: `whatsappbusiness://send?phone=${digitsOnly}`,
       webUrl: null,
     },
     {
@@ -330,14 +330,14 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
               <Text style={s.fieldLabel}>{t.contacts.phone} <Text style={s.required}>{t.common.required}</Text></Text>
               <TextInput
                 style={s.input} value={phoneInput} onChangeText={setPhoneInput}
-                placeholder={t.contacts.phonePlaceholder} placeholderTextColor="#C7C7CC"
+                placeholder={t.contacts.phonePlaceholder} placeholderTextColor={colors.placeholder}
                 keyboardType="phone-pad" autoFocus
               />
               <Text style={styles.phoneHint}>{t.contactInfo.phoneHint}</Text>
               <Text style={s.fieldLabel}>{t.contactInfo.phoneLabel}</Text>
               <TextInput
                 style={s.input} value={phoneLabelInput} onChangeText={setPhoneLabelInput}
-                placeholder={t.common.placeholderMobile} placeholderTextColor="#C7C7CC"
+                placeholder={t.common.placeholderMobile} placeholderTextColor={colors.placeholder}
               />
             </ScrollView>
             <View style={s.modalActions}>
@@ -363,13 +363,13 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
               <Text style={s.fieldLabel}>{t.contacts.email} <Text style={s.required}>{t.common.required}</Text></Text>
               <TextInput
                 style={s.input} value={emailInput} onChangeText={setEmailInput}
-                placeholder={t.contacts.emailPlaceholder} placeholderTextColor="#C7C7CC"
+                placeholder={t.contacts.emailPlaceholder} placeholderTextColor={colors.placeholder}
                 keyboardType="email-address" autoCapitalize="none" autoFocus
               />
               <Text style={s.fieldLabel}>{t.contactInfo.emailLabel}</Text>
               <TextInput
                 style={s.input} value={emailLabelInput} onChangeText={setEmailLabelInput}
-                placeholder={t.common.placeholderPersonal} placeholderTextColor="#C7C7CC"
+                placeholder={t.common.placeholderPersonal} placeholderTextColor={colors.placeholder}
               />
             </ScrollView>
             <View style={s.modalActions}>

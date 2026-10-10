@@ -7,6 +7,7 @@ import { useI18n } from '../../utils/i18n';
 import { DOC_TYPES_KEYS } from '../../utils/contactList';
 import { DOC_TYPES, DOCS_WITH_DATES, formatDate } from '../../utils/contactUtils';
 import { useSharedStyles } from './contactStyles';
+import { useTheme } from '../../utils/theme';
 
 interface Props {
   contactId: string;
@@ -15,6 +16,7 @@ interface Props {
 
 export default function DocumentsCard({ contactId, initialCards }: Props) {
   const s = useSharedStyles();
+  const { colors } = useTheme();
   const { t } = useI18n();
   const { getIdentityCards, addIdentityCard, updateIdentityCard, deleteIdentityCard } = useContacts();
 
@@ -137,7 +139,7 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
               <Text style={s.fieldLabel}>{docType === t.contactList.docDriversLicense ? t.documents.licenseType : t.documents.number} <Text style={s.required}>{t.common.required}</Text></Text>
               <TextInput
                 style={s.input} value={cardNumber} onChangeText={setCardNumber}
-                placeholder={docType === t.contactList.docDriversLicense ? t.documents.licenseType : t.documents.number} placeholderTextColor="#C7C7CC"
+                placeholder={docType === t.contactList.docDriversLicense ? t.documents.licenseType : t.documents.number} placeholderTextColor={colors.placeholder}
                 autoCapitalize="characters"
               />
 
@@ -147,14 +149,14 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
                   <TextInput
                     style={s.input} value={issueDate}
                     onChangeText={v => formatDate(v, setIssueDate)}
-                    placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor="#C7C7CC"
+                    placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor={colors.placeholder}
                     keyboardType="numeric" maxLength={10}
                   />
                   <Text style={s.fieldLabel}>{t.documents.expiryDate}</Text>
                   <TextInput
                     style={s.input} value={expiryDate}
                     onChangeText={v => formatDate(v, setExpiryDate)}
-                    placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor="#C7C7CC"
+                    placeholder={t.contacts.birthdatePlaceholder} placeholderTextColor={colors.placeholder}
                     keyboardType="numeric" maxLength={10}
                   />
                 </>

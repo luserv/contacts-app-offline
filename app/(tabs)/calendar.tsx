@@ -127,7 +127,7 @@ export default function CalendarScreen() {
       <View style={[styles.dowRow, { backgroundColor: colors.surface, borderBottomColor: colors.separator }]}>
         {DAY_HEADERS(t.calendar).map(d => (
           <View key={d} style={[styles.dowCell, { width: cellSize }]}>
-            <Text style={styles.dowText}>{d}</Text>
+            <Text style={[styles.dowText, { color: colors.textSecondary }]}>{d}</Text>
           </View>
         ))}
       </View>
@@ -188,8 +188,8 @@ export default function CalendarScreen() {
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <Pressable style={[styles.overlay, { backgroundColor: colors.overlay }]} onPress={() => setModalVisible(false)}>
-          <Pressable style={[styles.sheet, { backgroundColor: colors.surface }]} onPress={e => e.stopPropagation()}>
+        <Pressable style={[styles.overlay, (isDesktop || isTablet) && styles.overlayCentered, { backgroundColor: colors.overlay }]} onPress={() => setModalVisible(false)}>
+          <Pressable style={[styles.sheet, (isDesktop || isTablet) && styles.sheetCentered, { backgroundColor: colors.surface }]} onPress={e => e.stopPropagation()}>
             <View style={[styles.sheetHandle, { backgroundColor: colors.separator }]} />
             <View style={[styles.sheetHeader, { borderBottomColor: colors.separatorFine }]}>
               <Text style={[styles.sheetTitle, { color: colors.text }]}>
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14,
     backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee',
   },
-  navBtn: { padding: 4 },
+  navBtn: { padding: 10, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   monthTitle: { fontSize: 17, fontWeight: '700', color: '#222' },
   dowRow: {
     flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8,
@@ -260,9 +260,13 @@ const styles = StyleSheet.create({
   legendDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#f5a623' },
   legendText: { fontSize: 12, color: '#888' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  overlayCentered: { justifyContent: 'center', alignItems: 'center' },
   sheet: {
     backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20,
     maxHeight: '65%', paddingBottom: 32,
+  },
+  sheetCentered: {
+    borderRadius: 14, maxWidth: 480, width: '100%', maxHeight: '60%',
   },
   sheetHandle: {
     width: 36, height: 4, borderRadius: 2, backgroundColor: '#ddd',

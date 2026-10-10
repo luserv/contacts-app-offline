@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n } from '../utils/i18n';
+import { useResponsive } from '../utils/responsive';
 import { useTheme } from '../utils/theme';
 
 export default function BottomTabBar() {
@@ -10,6 +11,9 @@ export default function BottomTabBar() {
   const { t } = useI18n();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { isDesktop } = useResponsive();
+
+  if (isDesktop && Platform.OS === 'web') return null;
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom, backgroundColor: colors.surface, borderTopColor: colors.separator }]}>
