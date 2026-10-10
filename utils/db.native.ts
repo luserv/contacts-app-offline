@@ -6,6 +6,9 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
 import { initializeDatabase } from './dbInit';
+import dbSchema from './dbSchema.js';
+
+const { mergeRemoteRows, computeSyncSignature } = dbSchema;
 
 const EncodingType = (FileSystem as any).EncodingType || { Base64: 'base64' };
 
@@ -20,11 +23,22 @@ function makeAdapter() {
   };
 }
 
-// Inicialización síncrona al cargar el módulo
-(async () => { await initializeDatabase(makeAdapter()); })();
+// Inicialización síncrona al cargar el módulo — garantizar que termine antes de usar _db
+const _initPromise = initializeDatabase(makeAdapter()).catch((e) => {
+  console.warn('[db.native] init error:', e);
+});
+
+export async function waitForDbReady(): Promise<void> {
+  await _initPromise;
+}
 
 function uniqueTempDbName(prefix: string): string {
   return `${prefix}-${Date.now()}.db`;
+}
+
+/** Joins a FileSystem directory URI and a file name. */
+function cachePath(cacheDir: string, fileName: string): string {
+  return cacheDir.endsWith('/') ? `${cacheDir}${fileName}` : `${cacheDir}/${fileName}`;
 }
 
 function closeDatabase(database: SQLite.SQLiteDatabase) {
@@ -63,7 +77,7 @@ export async function exportDatabaseToFile(destinationPath: string): Promise<voi
   if (!cacheDir) {
     throw new Error('FileSystem.cacheDirectory no disponible');
   }
-  const tempPath = cacheDir.endsWith('/') ? `${cacheDir}${tempName}` : `${cacheDir}/${tempName}`;
+  const tempPath = cachePath(cacheDir, tempName);
   const snapshotDb = SQLite.openDatabaseSync(tempName, undefined, cacheDir);
 
   try {
@@ -92,7 +106,7 @@ export async function importDatabaseFromFile(sourcePath: string): Promise<void> 
   if (!cacheDir) {
     throw new Error('FileSystem.cacheDirectory no disponible');
   }
-  const tempPath = cacheDir.endsWith('/') ? `${cacheDir}${tempName}` : `${cacheDir}/${tempName}`;
+  const tempPath = cachePath(cacheDir, tempName);
   let sourceDb: SQLite.SQLiteDatabase | null = null;
 
   try {
@@ -122,34 +136,76 @@ export async function importDatabaseFromFile(sourcePath: string): Promise<void> 
   }
 }
 
-const SYNC_TABLES_NATIVE = [
-  'contact', 'contact_phone', 'contact_email', 'contact_note',
-  'contact_url', 'contact_bank_account', 'contact_relationship',
-  'contact_keyword', 'national_identity_card', 'contact_organization',
-];
+type Row = Record<string, unknown>;
+
+/**
+ * expo-sqlite adapter for the shared merge rules (dbSchema.js).
+ * Platform behavior kept as-is: foreign keys are not toggled during the merge and
+ * `contact` rows are written with INSERT OR REPLACE over a fixed column list.
+ */
+function expoSqliteMergeTarget(localDb: SQLite.SQLiteDatabase, remoteDb: SQLite.SQLiteDatabase) {
+  return {
+    openTable: (table: string, idColumn: string) => ({
+      remoteRows: remoteDb.getAllSync<Row>(`SELECT * FROM ${table}`),
+      localUpdatedAt: (id: unknown) => localDb.getFirstSync<{ updated_at: string }>(
+        `SELECT updated_at FROM ${table} WHERE ${idColumn} = ?`, id as SQLite.SQLiteBindValue
+      )?.updated_at,
+    }),
+    run: (sql: string, params: unknown[]) => {
+      localDb.runSync(sql, params as SQLite.SQLiteBindValue[]);
+    },
+    writeContact: (row: Row) => {
+      localDb.runSync(
+        `INSERT OR REPLACE INTO contact (contact_id, first_name, middle_name, surname, birthdate, gender, status_id, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [row.contact_id, row.first_name, row.middle_name, row.surname,
+          row.birthdate, row.gender, row.status_id, row.updated_at] as SQLite.SQLiteBindValue[]
+      );
+    },
+  };
+}
 
 export async function exportDatabaseToBase64(): Promise<string> {
   return readDatabaseAsBase64();
 }
 
 export async function mergeDatabaseFromBase64(base64: string): Promise<void> {
-  await writeDatabaseFromBase64(base64);
+  // Smart merge using updated_at
+  const cacheDir = FileSystem.cacheDirectory;
+  if (!cacheDir) {
+    throw new Error('FileSystem.cacheDirectory not available');
+  }
+  // Open exactly the file that was written: same name, same directory. expo-sqlite
+  // parses the `file://` URI itself (toUri().path), so the scheme can stay.
+  const tempName = uniqueTempDbName('contacts-merge');
+  const tempPath = cachePath(cacheDir, tempName);
+
+  try {
+    await FileSystem.writeAsStringAsync(tempPath, base64, { encoding: EncodingType.Base64 });
+    // If the downloaded file cannot be opened, this throws and the caller keeps its sync marker.
+    const sourceDb = SQLite.openDatabaseSync(tempName, undefined, cacheDir);
+
+    try {
+      // Throws when every table fails, so the caller keeps its sync marker.
+      mergeRemoteRows(expoSqliteMergeTarget(_db, sourceDb));
+    } finally {
+      closeDatabase(sourceDb);
+      try { SQLite.deleteDatabaseSync(tempName, cacheDir); } catch (_) {}
+    }
+
+    try { _db.execSync('PRAGMA wal_checkpoint(TRUNCATE)'); } catch (_) {}
+  } finally {
+    try { await FileSystem.deleteAsync(tempPath, { idempotent: true }); } catch (_) {}
+  }
 }
 
 export async function getDatabaseSignature(): Promise<string> {
-  let total = 0;
-  for (const table of SYNC_TABLES_NATIVE) {
-    try {
-      const r = _db.getFirstSync<{ c: number }>(`SELECT COUNT(*) c FROM ${table}`);
-      if (r) total += r.c;
-    } catch {}
-  }
-  return String(total);
+  return computeSyncSignature(sql => _db.getFirstSync<{ c: number }>(sql));
 }
 
 export async function readDatabaseAsBase64(): Promise<string> {
   const cacheDir = FileSystem.cacheDirectory ?? '';
-  const tempPath = cacheDir.endsWith('/') ? `${cacheDir}contacts-drive-${Date.now()}.db` : `${cacheDir}/contacts-drive-${Date.now()}.db`;
+  const tempPath = cachePath(cacheDir, uniqueTempDbName('contacts-drive'));
   await exportDatabaseToFile(tempPath);
 
   try {
@@ -163,7 +219,7 @@ export async function readDatabaseAsBase64(): Promise<string> {
 
 export async function writeDatabaseFromBase64(base64: string): Promise<void> {
   const cacheDir = FileSystem.cacheDirectory ?? '';
-  const tempPath = cacheDir.endsWith('/') ? `${cacheDir}contacts-restore-${Date.now()}.db` : `${cacheDir}/contacts-restore-${Date.now()}.db`;
+  const tempPath = cachePath(cacheDir, uniqueTempDbName('contacts-restore'));
 
   try {
     await FileSystem.writeAsStringAsync(tempPath, base64, {

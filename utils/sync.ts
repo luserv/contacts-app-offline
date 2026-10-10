@@ -1,14 +1,16 @@
 /**
- * Sincronización entre dispositivos (MVP: archivo .db completo, "último que guarda gana").
+ * Cross-device sync (MVP: whole .db file, merged by updated_at).
  *
- * Flujo:
- *  - pushNow: sube la DB local al archivo canónico de Drive, marcada con este deviceId,
- *    y guarda la firma de contenido subida.
- *  - pullIfNeeded: si el archivo remoto lo escribió OTRO dispositivo y es más nuevo que
- *    nuestra marca, lo baja y lo importa. Si la firma local difiere de lo último subido,
- *    propaga los datos. La firma evita el ping-pong infinito entre dispositivos.
+ * Flow:
+ *  - pushNow: uploads the local DB to the canonical Drive file, tagged with this
+ *    deviceId, and stores the uploaded content signature.
+ *  - pullIfNeeded: if the remote file was written by ANOTHER device and is newer
+ *    than our marker, downloads it and merges it by updated_at (not a full replace).
+ *    The signature prevents endless ping-pong between devices.
  *
- * Nota: contacts no tiene updated_at por fila, por lo que la fusión es reemplazo completo.
+ * Merge rules live in utils/dbSchema.js: a remote row wins when it is missing
+ * locally, either side lacks updated_at, or the remote updated_at is strictly
+ * newer. On equal timestamps the local row is kept.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';

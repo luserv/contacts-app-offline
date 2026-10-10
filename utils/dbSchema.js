@@ -179,8 +179,8 @@ const seedSql = `
 `;
 
 /**
- * Tablas involucradas en sincronización entre dispositivos.
- * Fuente única de verdad — usar en db.ts, db.native.ts y electron/main.js.
+ * Tables that take part in cross-device sync (content signature).
+ * Single source of truth for db.ts, db.native.ts and electron/database.js.
  */
 const SYNC_TABLES = [
   'contact', 'contact_phone', 'contact_email', 'contact_note',
@@ -188,4 +188,198 @@ const SYNC_TABLES = [
   'contact_keyword', 'national_identity_card', 'contact_organization',
 ];
 
-module.exports = { createTablesSql, migrationsSql, seedSql, SYNC_TABLES };
+// ── Gender migration ─────────────────────────────────────────────────────────
+// Legacy databases declared `gender CHECK(gender IN ('male', 'female'))`.
+// The migration rebuilds `contact` with uppercase values and the new CHECK.
+// Foreign-key toggling and error handling stay with each adapter.
+
+/**
+ * @param {string | null | undefined} contactTableSql `sqlite_master.sql` of the `contact` table.
+ * @returns {boolean}
+ */
+function needsGenderMigration(contactTableSql) {
+  return !!contactTableSql && contactTableSql.includes("'male'");
+}
+
+/**
+ * Statements that rebuild `contact` with uppercase gender values.
+ * Known drift: utils/dbInit.ts keeps `updated_at`, while Electron historically
+ * rebuilt the table without it. `keepUpdatedAt` preserves each behavior.
+ * @param {{ keepUpdatedAt: boolean }} options
+ * @returns {string[]}
+ */
+function genderMigrationStatements({ keepUpdatedAt }) {
+  const updatedAtColumn = keepUpdatedAt ? "\n        updated_at TEXT DEFAULT (datetime('now'))," : '';
+  const updatedAtSelect = keepUpdatedAt ? ', updated_at' : '';
+  return [
+    'DROP TABLE IF EXISTS contact_gender_tmp',
+    `CREATE TABLE contact_gender_tmp (
+        contact_id TEXT PRIMARY KEY,
+        first_name TEXT NOT NULL,
+        middle_name TEXT,
+        surname TEXT NOT NULL,
+        birthdate TEXT,
+        gender TEXT CHECK(gender IN ('MALE', 'FEMALE')),
+        status_id TEXT,${updatedAtColumn}
+        FOREIGN KEY (status_id) REFERENCES marital_status (status_id)
+      )`,
+    `INSERT INTO contact_gender_tmp
+         SELECT contact_id, first_name, middle_name, surname, birthdate, UPPER(gender), status_id${updatedAtSelect}
+         FROM contact`,
+    'DROP TABLE contact',
+    'ALTER TABLE contact_gender_tmp RENAME TO contact',
+  ];
+}
+
+// ── Drive merge rules ────────────────────────────────────────────────────────
+// Single source of truth for the updated_at merge used by every adapter:
+// sql.js (utils/dbMerge.ts), expo-sqlite (utils/db.native.ts) and
+// better-sqlite3 (electron/database.js). Adapters only provide engine access.
+
+/**
+ * Tables merged on Drive pull, in merge order.
+ * Known gap: `contact_keyword` is in SYNC_TABLES but is not merged.
+ */
+const MERGE_TABLES = [
+  'contact', 'contact_phone', 'contact_email', 'contact_note',
+  'contact_url', 'contact_bank_account', 'contact_relationship',
+  'national_identity_card', 'contact_organization',
+];
+
+/** @typedef {Record<string, unknown>} Row */
+
+/**
+ * @typedef {Object} MergeTableCursor
+ * @property {Iterable<Row>} remoteRows Rows of the table in the remote database.
+ * @property {(id: unknown) => unknown} localUpdatedAt `updated_at` of the local row with that id, or null/undefined when missing.
+ * @property {() => void} [close] Releases engine resources once the table is done.
+ */
+
+/**
+ * @typedef {Object} MergeTarget
+ * @property {(table: string, idColumn: string) => MergeTableCursor} openTable
+ * @property {(sql: string, params: unknown[]) => void} run Executes a write on the local database.
+ * @property {(row: Row) => void} [writeContact] Overrides the default `contact` upsert.
+ */
+
+/**
+ * @typedef {Object} MergeResult
+ * @property {number} mergedRows
+ * @property {string[]} failedTables
+ */
+
+/** @param {string} table */
+function mergeIdColumn(table) {
+  return table === 'contact' ? 'contact_id' : 'id';
+}
+
+/**
+ * The remote row wins when the local row is missing, either side has no
+ * timestamp, or the remote timestamp is strictly newer.
+ * @param {unknown} localUpdatedAt
+ * @param {unknown} remoteUpdatedAt
+ */
+function shouldTakeRemoteRow(localUpdatedAt, remoteUpdatedAt) {
+  return !localUpdatedAt || !remoteUpdatedAt
+    || /** @type {string} */ (remoteUpdatedAt) > /** @type {string} */ (localUpdatedAt);
+}
+
+/**
+ * @param {MergeTarget} target
+ * @param {string} table
+ * @param {string} idColumn
+ * @param {Row} row
+ */
+function writeRemoteRow(target, table, idColumn, row) {
+  const columns = Object.keys(row).filter(c => c !== 'rowid');
+  const placeholders = columns.map(() => '?').join(',');
+  const values = columns.map(c => row[c]);
+
+  if (table === 'contact') {
+    if (target.writeContact) {
+      target.writeContact(row);
+      return;
+    }
+    const updateSet = columns
+      .filter(c => c !== idColumn)
+      .map(c => `${c} = excluded.${c}`)
+      .join(', ');
+    target.run(`INSERT INTO ${table} (${columns.join(',')}) VALUES (${placeholders})
+      ON CONFLICT(${idColumn}) DO UPDATE SET ${updateSet}`, values);
+    return;
+  }
+
+  // Child tables: replace the row by id.
+  target.run(`DELETE FROM ${table} WHERE ${idColumn} = ?`, [row[idColumn]]);
+  target.run(`INSERT INTO ${table} (${columns.join(',')}) VALUES (${placeholders})`, values);
+}
+
+/**
+ * Merges remote rows into the local database table by table.
+ * Per-table errors are logged and reported in `failedTables`; when every table
+ * fails it throws, so callers never treat the pull as a successful sync.
+ * Foreign-key toggling and transactions stay with each adapter.
+ * @param {MergeTarget} target
+ * @returns {MergeResult}
+ */
+function mergeRemoteRows(target) {
+  /** @type {MergeResult} */
+  const result = { mergedRows: 0, failedTables: [] };
+
+  for (const table of MERGE_TABLES) {
+    const idColumn = mergeIdColumn(table);
+    try {
+      const cursor = target.openTable(table, idColumn);
+      try {
+        for (const row of cursor.remoteRows) {
+          if (!shouldTakeRemoteRow(cursor.localUpdatedAt(row[idColumn]), row.updated_at)) continue;
+          writeRemoteRow(target, table, idColumn, row);
+          result.mergedRows++;
+        }
+      } finally {
+        if (cursor.close) cursor.close();
+      }
+    } catch (e) {
+      console.warn(`[merge] ${table}:`, e);
+      result.failedTables.push(table);
+    }
+  }
+
+  if (result.failedTables.length === MERGE_TABLES.length) {
+    throw new Error(`[merge] all tables failed: ${result.failedTables.join(', ')}`);
+  }
+  return result;
+}
+
+/**
+ * Content signature used to avoid sync ping-pong: total row count of SYNC_TABLES.
+ * Tables that cannot be counted (e.g. missing) are skipped.
+ * @param {(sql: string) => { c: number } | null | undefined} getFirst
+ * @returns {string}
+ */
+function computeSyncSignature(getFirst) {
+  let total = 0;
+  for (const table of SYNC_TABLES) {
+    try {
+      const row = getFirst(`SELECT COUNT(*) c FROM ${table}`);
+      if (row) total += row.c;
+    } catch (_) {
+      // Missing table: not part of the signature.
+    }
+  }
+  return String(total);
+}
+
+module.exports = {
+  createTablesSql,
+  migrationsSql,
+  seedSql,
+  SYNC_TABLES,
+  needsGenderMigration,
+  genderMigrationStatements,
+  MERGE_TABLES,
+  mergeIdColumn,
+  shouldTakeRemoteRow,
+  mergeRemoteRows,
+  computeSyncSignature,
+};

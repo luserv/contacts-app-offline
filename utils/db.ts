@@ -4,6 +4,10 @@
  * - Browser: usa sql.js (WASM) con persistencia en IndexedDB.
  */
 import { initializeDatabase } from './dbInit';
+import { mergeSqlJsDatabases } from './dbMerge';
+import dbSchema from './dbSchema.js';
+
+const { computeSyncSignature } = dbSchema;
 
 declare global {
   interface Window {
@@ -66,6 +70,30 @@ async function idbSet(key: string, value: Uint8Array): Promise<void> {
 // ── sql.js singleton ───────────────────────────────────────────
 let _SQL: any = null;
 let _webDb: any = null;
+let _persistTimer: ReturnType<typeof setTimeout> | null = null;
+let _dirty = false;
+
+function schedulePersist() {
+  _dirty = true;
+  if (_persistTimer) return;
+  _persistTimer = setTimeout(async () => {
+    _persistTimer = null;
+    if (_dirty && _webDb) {
+      _dirty = false;
+      try { await idbSet(IDB_KEY, _webDb.export()); } catch (e) {
+        console.error('[db] persist failed:', e);
+      }
+    }
+  }, 300);
+}
+
+async function flushPersist() {
+  if (_persistTimer) { clearTimeout(_persistTimer); _persistTimer = null; }
+  if (_dirty && _webDb) {
+    _dirty = false;
+    await idbSet(IDB_KEY, _webDb.export());
+  }
+}
 
 async function getSqlJs(): Promise<any> {
   if (_SQL) return _SQL;
@@ -81,37 +109,38 @@ async function getWebDb(): Promise<any> {
   _webDb = stored ? new SQL.Database(stored) : new SQL.Database();
   if (!stored) {
     await initializeDatabase(makeLocalAdapter(_webDb));
-    await persistWebDb();
+    schedulePersist();
   }
   return _webDb;
 }
 
-async function persistWebDb(): Promise<void> {
-  if (!_webDb) return;
-  await idbSet(IDB_KEY, _webDb.export());
+function sqlJsGetAll<T>(sqlDb: any, sql: string, params: unknown[]): T[] {
+  const stmt = sqlDb.prepare(sql);
+  if (params.length) stmt.bind(params as any);
+  const rows: T[] = [];
+  while (stmt.step()) rows.push(stmt.getAsObject() as any);
+  stmt.free();
+  return rows;
+}
+
+function sqlJsGetFirst<T>(sqlDb: any, sql: string, params: unknown[]): T | null {
+  const stmt = sqlDb.prepare(sql);
+  if (params.length) stmt.bind(params as any);
+  const row = stmt.step() ? stmt.getAsObject() as T : null;
+  stmt.free();
+  return row;
+}
+
+function sqlJsRun(sqlDb: any, sql: string, params: unknown[]): void {
+  sqlDb.run(sql, params.length ? params as any : undefined);
 }
 
 function makeLocalAdapter(sqlDb: any) {
   return {
     execAsync: async (sql: string) => { sqlDb.exec(sql); },
-    runAsync: async (sql: string, ...params: unknown[]) => {
-      sqlDb.run(sql, params.length ? params as any : undefined);
-    },
-    getAllAsync: async <T>(sql: string, ...params: unknown[]): Promise<T[]> => {
-      const stmt = sqlDb.prepare(sql);
-      if (params.length) stmt.bind(params as any);
-      const rows: T[] = [];
-      while (stmt.step()) rows.push(stmt.getAsObject() as any);
-      stmt.free();
-      return rows;
-    },
-    getFirstAsync: async <T>(sql: string, ...params: unknown[]): Promise<T | null> => {
-      const stmt = sqlDb.prepare(sql);
-      if (params.length) stmt.bind(params as any);
-      const row = stmt.step() ? stmt.getAsObject() as T : null;
-      stmt.free();
-      return row;
-    },
+    runAsync: async (sql: string, ...params: unknown[]) => { sqlJsRun(sqlDb, sql, params); },
+    getAllAsync: async <T>(sql: string, ...params: unknown[]): Promise<T[]> => sqlJsGetAll<T>(sqlDb, sql, params),
+    getFirstAsync: async <T>(sql: string, ...params: unknown[]): Promise<T | null> => sqlJsGetFirst<T>(sqlDb, sql, params),
   };
 }
 
@@ -119,12 +148,6 @@ function makeLocalAdapter(sqlDb: any) {
 export async function reloadDatabase(): Promise<void> {}
 export async function exportDatabaseToFile(_path: string): Promise<void> {}
 export async function importDatabaseFromFile(_path: string): Promise<void> {}
-
-const SYNC_TABLES_WEB = [
-  'contact', 'contact_phone', 'contact_email', 'contact_note',
-  'contact_url', 'contact_bank_account', 'contact_relationship',
-  'contact_keyword', 'national_identity_card', 'contact_organization',
-];
 
 export async function exportDatabaseToBase64(): Promise<string> {
   if (typeof window !== 'undefined' && window.electronDrive) {
@@ -139,7 +162,20 @@ export async function mergeDatabaseFromBase64(base64: string): Promise<void> {
     if (r?.error) throw new Error(r.error);
     return;
   }
-  await writeDatabaseFromBase64(base64);
+  // Web: smart merge using updated_at
+  await flushPersist();
+  const SQL = await getSqlJs();
+  const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  const remoteDb = new SQL.Database(binary);
+  const webDb = await getWebDb();
+
+  try {
+    // Throws when the merge fails entirely so the caller does not advance the sync marker.
+    mergeSqlJsDatabases(webDb, remoteDb);
+  } finally {
+    remoteDb.close();
+  }
+  await idbSet(IDB_KEY, webDb.export());
 }
 
 export async function getDatabaseSignature(): Promise<string> {
@@ -147,19 +183,12 @@ export async function getDatabaseSignature(): Promise<string> {
     return window.electronDrive.dbSignature();
   }
   const webDb = await getWebDb();
-  let total = 0;
-  for (const table of SYNC_TABLES_WEB) {
-    try {
-      const stmt = webDb.prepare(`SELECT COUNT(*) c FROM ${table}`);
-      if (stmt.step()) total += (stmt.getAsObject() as any).c as number;
-      stmt.free();
-    } catch {}
-  }
-  return String(total);
+  return computeSyncSignature(sql => sqlJsGetFirst<{ c: number }>(webDb, sql, []));
 }
 
 export async function readDatabaseAsBase64(): Promise<string> {
   if (hasElectronDB()) return '';
+  await flushPersist();
   const webDb = await getWebDb();
   const data: Uint8Array = webDb.export();
   let binary = '';
@@ -176,43 +205,31 @@ export async function writeDatabaseFromBase64(base64: string): Promise<void> {
   const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
   if (_webDb) { _webDb.close(); _webDb = null; }
   _webDb = new SQL.Database(binary);
-  await persistWebDb();
+  await idbSet(IDB_KEY, _webDb.export());
 }
 
 // ── DB adapter ─────────────────────────────────────────────────
 export const db = {
   getAllAsync: async <T>(sql: string, ...params: unknown[]): Promise<T[]> => {
     if (hasElectronDB()) return window.electronDB.getAllAsync(sql, params) as Promise<T[]>;
-    const webDb = await getWebDb();
-    const stmt = webDb.prepare(sql);
-    if (params.length) stmt.bind(params as any);
-    const rows: T[] = [];
-    while (stmt.step()) rows.push(stmt.getAsObject() as any);
-    stmt.free();
-    return rows;
+    return sqlJsGetAll<T>(await getWebDb(), sql, params);
   },
 
   getFirstAsync: async <T>(sql: string, ...params: unknown[]): Promise<T | null> => {
     if (hasElectronDB()) return window.electronDB.getFirstAsync(sql, params) as Promise<T | null>;
-    const webDb = await getWebDb();
-    const stmt = webDb.prepare(sql);
-    if (params.length) stmt.bind(params as any);
-    const row = stmt.step() ? stmt.getAsObject() as T : null;
-    stmt.free();
-    return row;
+    return sqlJsGetFirst<T>(await getWebDb(), sql, params);
   },
 
   runAsync: async (sql: string, ...params: unknown[]): Promise<void> => {
     if (hasElectronDB()) return window.electronDB.runAsync(sql, params);
-    const webDb = await getWebDb();
-    webDb.run(sql, params.length ? params as any : undefined);
-    await persistWebDb();
+    sqlJsRun(await getWebDb(), sql, params);
+    schedulePersist();
   },
 
   execAsync: async (sql: string): Promise<void> => {
     if (hasElectronDB()) return window.electronDB.execAsync(sql);
     const webDb = await getWebDb();
     webDb.exec(sql);
-    await persistWebDb();
+    schedulePersist();
   },
 };
