@@ -30,7 +30,13 @@ Fix the three critical defects found in the 2026-10-09 audit, each covered by a 
 - `pnpm exec tsc --noEmit`
 
 ## Commits
-- Pending: user decision on how to handle pre-existing WIP in the same files before work-unit commits.
+- `6ac245e` chore: pre-existing UI/utils WIP (files untouched by this feature).
+- `7d5c9e0` build: JS type checking (T4 config).
+- `d55fde0` fix(sync): T1–T3 + T4 fixes + T5 refactor + tests. `utils/db*.ts`, `utils/sync.ts`, `electron/main.js` also carry prior WIP that could not be separated.
+- `a25711c` fix(electron): review correction — ensure `updated_at` exists before merge and gender migration; Electron gender rebuild now keeps `updated_at`.
+
+## Review (RDD)
+- Assessed high (process boundary in `electron/ipc.js`); user granted review. 4 lenses; 1 CRITICAL reliability finding (Electron merge on legacy DBs without `updated_at` silently skipped `contact` and advanced the marker). One bounded correction (`a25711c`), targeted validation approved, acknowledged (lineage review-7c8c2f8f03111121).
 
 ## Progress / Evidence
 - Runner: `pnpm test` = `node --test tests/*.test.mjs` (Node 26 strips TS types natively, so tests import `utils/dbMerge.ts` directly; no new dependency). Tests are `.mjs` so `tsc` does not need `allowImportingTsExtensions`.
@@ -54,4 +60,5 @@ Fix the three critical defects found in the 2026-10-09 audit, each covered by a 
 - Manual testing still needed: Electron desktop start, login (interactive + silent refresh), Drive push/pull merge, DB import/export, app:// asset serving; Android Drive pull merge.
 
 ## Next step
-User decision on commits (see Commits); then native review per RDD.
+Merged to local `main` (no push). Manual testing pending: Electron start/login/Drive sync/import-export/app:// assets/deleteContact; Android Drive pull merge.
+Follow-ups (out of scope): `contact_keyword` missing from MERGE_TABLES; `migrationsSql` updated_at ADD COLUMN with non-constant default; `utils/dbInit.ts` own gender migration copy; merge tombstones/transactions; Electron hardening (secret in .env bundle, raw SQL IPC).
