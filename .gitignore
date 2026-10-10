@@ -70,3 +70,5 @@ out/
 *.keystore
 .blackboxcli/
 .blackbox/
+odd/
+TODO.md
