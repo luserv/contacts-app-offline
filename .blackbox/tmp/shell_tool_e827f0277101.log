@@ -1,7 +1,0 @@
-Starting project at C:\tmp\contacts-app-offline
-Starting Metro Bundler
-Waiting on http://localhost:8081
-Logs for your project will appear below.
-Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
-Web Bundled 1841ms node_modules\expo-router\entry.js (3072 modules)
- LOG  [web] Logs will appear in the browser console

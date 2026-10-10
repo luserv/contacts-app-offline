@@ -69,3 +69,4 @@ out/
 # Android keystore
 *.keystore
 .blackboxcli/
+.blackbox/
