@@ -11,6 +11,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "lint": "expo lint",
+    "test": "node --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.electron.json",
     "android:dev": "expo run:android",
     "android:preview": "cross-env APP_ENV=preview expo run:android",
     "android:prod": "cross-env APP_ENV=production expo run:android",
@@ -85,6 +87,8 @@
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@electron/rebuild": "^4.0.4",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^22.19.19",
     "@types/react": "~19.1.17",
     "@types/sql.js": "^1.4.11",
     "babel-preset-expo": "~54.0.10",
