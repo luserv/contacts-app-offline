@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { getTranslations } from './i18n';
 import {
     BirthdayNotificationSettings,
     buildNotificationBody,
@@ -26,11 +27,9 @@ async function checkAndShowBirthdayNotifications() {
     if (!electronNotif) return;
     const contacts: { first_name: string; surname: string; birthdate: string }[] =
         await electronNotif.checkBirthdays();
+    const tn = (await getTranslations()).birthdayNotif;
     for (const c of contacts) {
-        showWebNotification(
-            '🎂 Birthday tomorrow',
-            `${c.first_name} ${c.surname} has a birthday tomorrow.`
-        );
+        showWebNotification(tn.webTitleTomorrow, tn.webBodyTomorrow(`${c.first_name} ${c.surname}`));
     }
 }
 
@@ -128,14 +127,6 @@ interface NotifData {
     template?: string;
 }
 
-const DEFAULT_BODY_DEFAULTS = {
-    sameDay: '🎂 {name} has a birthday today.',
-    oneDay: '🎂 {name} has a birthday tomorrow.',
-    nDays: (n: number) => `🎂 {name} has a birthday in ${n} days.`,
-};
-
-const NOTIFICATION_TITLE = '🎂 Birthday';
-
 // ─── Sync inteligente ─────────────────────────────────────────────────────────
 
 /**
@@ -153,6 +144,8 @@ async function syncBirthdayNotifications(
         await cancelAllBirthdayNotifications();
         return 0;
     }
+
+    const tn = (await getTranslations()).birthdayNotif;
 
     const scheduled = await N.getAllScheduledNotificationsAsync();
     const scheduledMap = new Map<string, NotifData | null>();
@@ -173,7 +166,7 @@ async function syncBirthdayNotifications(
         const { day: notifyDay, month: notifyMonth } = getDayShifted(parsed.day, parsed.month, settings.daysBefore);
         const id = `birthday_${contact.contact_id}`;
         const expectedName = `${contact.first_name} ${contact.surname}`;
-        const body = buildNotificationBody(settings.messageTemplate, expectedName, settings.daysBefore, DEFAULT_BODY_DEFAULTS);
+        const body = buildNotificationBody(settings.messageTemplate, expectedName, settings.daysBefore, tn);
         expectedIds.add(id);
 
         const existing = scheduledMap.get(id);
@@ -201,7 +194,7 @@ async function syncBirthdayNotifications(
             await N.scheduleNotificationAsync({
                 identifier: id,
                 content: {
-                    title: NOTIFICATION_TITLE,
+                    title: tn.title,
                     body,
                     sound: true,
                     data: {

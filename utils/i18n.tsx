@@ -27,7 +27,21 @@ const translations = {
       config: 'Configuración',
       notifications: 'Notificaciones',
     },
+    birthdayNotif: {
+      title: '🎂 Cumpleaños',
+      sameDay: '🎂 {name} cumple años hoy.',
+      oneDay: '🎂 {name} cumple años mañana.',
+      nDays: (n: number) => `🎂 {name} cumple años en ${n} días.`,
+      webTitleTomorrow: '🎂 Cumpleaños mañana',
+      webBodyTomorrow: (name: string) => `${name} cumple años mañana.`,
+    },
     common: {
+      refresh: 'Actualizar',
+      close: 'Cerrar',
+      clearSearch: 'Borrar búsqueda',
+      prevMonth: 'Mes anterior',
+      nextMonth: 'Mes siguiente',
+      copyEmail: 'Copiar correo',
       save: 'Guardar',
       cancel: 'Cancelar',
       delete: 'Eliminar',
@@ -60,7 +74,7 @@ const translations = {
       birthdateWithout: 'Sin fecha',
       noGender: 'Sin género',
       empty: 'Sin contactos',
-      newContact: 'Nuevo Contacto',
+      newContact: 'Nuevo contacto',
       firstName: 'Nombre',
       firstNamePlaceholder: 'Ingresa el nombre',
       middleName: 'Segundo nombre',
@@ -118,7 +132,7 @@ const translations = {
       deletePhoneConfirm: (phone: string) => `¿Eliminar ${phone}?`,
       deleteEmailConfirm: (email: string) => `¿Eliminar ${email}?`,
       phoneActions: {
-        title: 'Contactar via',
+        title: 'Contactar vía',
         callPhone: 'Llamada telefónica',
         sendSms: 'Enviar mensaje',
         whatsapp: 'WhatsApp',
@@ -147,7 +161,7 @@ const translations = {
       today: 'Hoy cumple años',
     },
     editContact: {
-      title: 'Editar Contacto',
+      title: 'Editar contacto',
       saveError: 'No se pudo guardar el contacto',
     },
     documents: {
@@ -323,7 +337,7 @@ const translations = {
       signInError: 'Error al iniciar sesión',
     },
     menu: {
-      notifications: 'Personaliza los recordatorios de cumpleaños',
+      notifications: 'Personalizá los recordatorios de cumpleaños',
       sync: 'Respaldo, restauración y Google Drive',
       config: 'Idioma, cuenta y licencia',
     },
@@ -426,7 +440,21 @@ const translations = {
       config: 'Settings',
       notifications: 'Notifications',
     },
+    birthdayNotif: {
+      title: '🎂 Birthday',
+      sameDay: '🎂 {name} has a birthday today.',
+      oneDay: '🎂 {name} has a birthday tomorrow.',
+      nDays: (n: number) => `🎂 {name} has a birthday in ${n} days.`,
+      webTitleTomorrow: '🎂 Birthday tomorrow',
+      webBodyTomorrow: (name: string) => `${name} has a birthday tomorrow.`,
+    },
     common: {
+      refresh: 'Refresh',
+      close: 'Close',
+      clearSearch: 'Clear search',
+      prevMonth: 'Previous month',
+      nextMonth: 'Next month',
+      copyEmail: 'Copy email',
       save: 'Save',
       cancel: 'Cancel',
       delete: 'Delete',
@@ -838,6 +866,15 @@ function detectDeviceLang(): Lang {
   } catch {
     return 'es';
   }
+}
+
+/** For code outside React (notifications): same language resolution as I18nProvider. */
+export async function getTranslations(): Promise<T> {
+  try {
+    const stored = await storage.getItem(LANG_KEY);
+    if (stored === 'es' || stored === 'en') return translations[stored] as T;
+  } catch {}
+  return translations[detectDeviceLang()] as T;
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
