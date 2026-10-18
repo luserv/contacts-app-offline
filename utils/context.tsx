@@ -80,6 +80,9 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
         })();
     }, []);
 
+    // Load contacts once on mount so any screen (e.g. calendar opened directly) has data.
+    useEffect(() => { fetchContacts(); }, [fetchContacts]);
+
     // Interceptar escrituras: cada runAsync programa un push diferido.
     useEffect(() => {
         const orig = db.runAsync;
