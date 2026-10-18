@@ -171,7 +171,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
                 placeholder={t.organizations.orgName} placeholderTextColor={colors.placeholder}
               />
               {suggestions.length > 0 && (
-                <View style={styles.suggestions}>
+                <View style={[styles.suggestions, { borderColor: colors.inputBorder }]}>
                   {suggestions.map((sg, i) => (
                     <Pressable key={`${i}-${sg}`} style={styles.suggestionRow} onPress={() => { setOrgName(sg); setSuggestions([]); }}>
                       <Text style={[styles.suggestionText, { color: colors.accent }]}>{sg}</Text>
@@ -186,7 +186,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
                 placeholder={t.organizations.achievementPlaceholder} placeholderTextColor={colors.placeholder}
               />
               {achievementSuggestions.length > 0 && (
-                <View style={styles.suggestions}>
+                <View style={[styles.suggestions, { borderColor: colors.inputBorder }]}>
                   {achievementSuggestions.map((sg, i) => (
                     <Pressable key={`${i}-${sg}`} style={styles.suggestionRow} onPress={() => { setAchievement(sg); setAchievementSuggestions([]); }}>
                       <Text style={[styles.suggestionText, { color: colors.accent }]}>{sg}</Text>

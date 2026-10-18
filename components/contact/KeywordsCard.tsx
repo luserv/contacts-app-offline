@@ -76,7 +76,7 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
 
       <View style={styles.chipsContainer}>
         {keywords.map(kw => (
-          <Pressable key={kw.id} style={styles.chip} onLongPress={() => handleRemove(kw)}>
+          <Pressable key={kw.id} style={[styles.chip, { backgroundColor: colors.accentSubtle }]} onLongPress={() => handleRemove(kw)}>
             <Text style={[styles.chipText, { color: colors.accent }]}>{kw.keyword}</Text>
             <Pressable onPress={() => handleRemove(kw)} hitSlop={6} accessibilityLabel={t.common.delete}>
               <Text style={[styles.chipRemove, { color: colors.accent }]}>✕</Text>
@@ -85,7 +85,7 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
         ))}
 
         {adding && (
-          <View style={styles.inputChip}>
+          <View style={[styles.inputChip, { borderColor: colors.accent }, { backgroundColor: colors.bg }]}>
             <TextInput
               ref={inputRef}
               style={styles.inputChipText}

@@ -353,7 +353,7 @@ export default function HomeScreen() {
             stickySectionHeadersEnabled
             renderSectionHeader={({ section: { title } }) =>
               title ? (
-                <View style={[styles.sectionHeader, isDesktop && styles.sectionHeaderDesktop, { backgroundColor: colors.bg }]}>
+                <View style={[styles.sectionHeader, { backgroundColor: colors.bg }, isDesktop && styles.sectionHeaderDesktop, { backgroundColor: colors.bg }]}>
                   <Text style={[styles.sectionHeaderText, { color: colors.textSecondary }]}>{title}</Text>
                 </View>
               ) : null
@@ -443,7 +443,7 @@ export default function HomeScreen() {
                   style={({ pressed }) => [styles.actionSheetItem, pressed && { backgroundColor: '#F2F2F7' }]}
                   onPress={() => { setSortKey(opt.key); setSortModalVisible(false); }}
                 >
-                  <Text style={[styles.actionSheetItemText, { color: colors.text }, sortKey === opt.key && styles.actionSheetItemActive, { color: colors.accent }]}>
+                  <Text style={[styles.actionSheetItemText, { color: colors.text }, sortKey === opt.key && [styles.actionSheetItemActive, { color: colors.accent }]]}>
                     {(t.contactList as any)[opt.transKey]}
                   </Text>
                   {sortKey === opt.key && <Ionicons name="checkmark" size={18} color={colors.accent} />}
@@ -470,7 +470,7 @@ export default function HomeScreen() {
               {genderFilterOptions.map(option => (
                 <Pressable
                   key={String(option.value)}
-                  style={[styles.filterChip, genderFilter === option.value && styles.filterChipActive]}
+                  style={[styles.filterChip, genderFilter === option.value && [styles.filterChipActive, { borderColor: colors.accent }, { backgroundColor: colors.accent }]]}
                   onPress={() => setGenderFilter(option.value)}
                 >
                   <Text style={[styles.filterChipText, genderFilter === option.value && styles.filterChipTextActive]}>
@@ -489,7 +489,7 @@ export default function HomeScreen() {
               ] as const).map(opt => (
                 <Pressable
                   key={opt.key}
-                  style={[styles.filterChip, birthdateFilter === opt.key && styles.filterChipActive]}
+                  style={[styles.filterChip, birthdateFilter === opt.key && [styles.filterChipActive, { borderColor: colors.accent }, { backgroundColor: colors.accent }]]}
                   onPress={() => setBirthdateFilter(opt.key)}
                 >
                   <Text style={[styles.filterChipText, birthdateFilter === opt.key && styles.filterChipTextActive]}>
@@ -508,7 +508,7 @@ export default function HomeScreen() {
               ] as const).map(opt => (
                 <Pressable
                   key={opt.key}
-                  style={[styles.filterChip, cedulaFilter.mode === opt.key && styles.filterChipActive]}
+                  style={[styles.filterChip, cedulaFilter.mode === opt.key && [styles.filterChipActive, { borderColor: colors.accent }, { backgroundColor: colors.accent }]]}
                   onPress={() => setCedulaFilter({ mode: opt.key })}
                 >
                   <Text style={[styles.filterChipText, cedulaFilter.mode === opt.key && styles.filterChipTextActive]}>
@@ -528,7 +528,7 @@ export default function HomeScreen() {
               ] as const).map(opt => (
                 <Pressable
                   key={opt.key}
-                  style={[styles.filterChip, organizationFilter.mode === opt.key && styles.filterChipActive]}
+                  style={[styles.filterChip, organizationFilter.mode === opt.key && [styles.filterChipActive, { borderColor: colors.accent }, { backgroundColor: colors.accent }]]}
                   onPress={() => setOrganizationFilter(prev => ({
                     mode: opt.key,
                     organizationId: opt.key === 'specific' ? prev.organizationId : undefined,
@@ -564,7 +564,7 @@ export default function HomeScreen() {
               ] as const).map(opt => (
                 <Pressable
                   key={opt.key}
-                  style={[styles.filterChip, maritalStatusFilter.mode === opt.key && styles.filterChipActive]}
+                  style={[styles.filterChip, maritalStatusFilter.mode === opt.key && [styles.filterChipActive, { borderColor: colors.accent }, { backgroundColor: colors.accent }]]}
                   onPress={() => setMaritalStatusFilter(prev => ({
                     mode: opt.key,
                     statusId: opt.key === 'specific' ? prev.statusId : undefined,
@@ -605,13 +605,13 @@ export default function HomeScreen() {
           style={{ flex: 1 }}
         >
         <View style={[styles.sheetOverlay, { backgroundColor: colors.overlay }]}>
-          <View style={[styles.sheet, isDesktop && styles.sheetDesktop, { backgroundColor: colors.bg }]}>
+          <View style={[styles.sheet, { backgroundColor: colors.bg }, isDesktop && styles.sheetDesktop, { backgroundColor: colors.bg }]}>
             <View style={styles.sheetHandle} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>{t.contacts.newContact}</Text>
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.firstName} <Text style={styles.required}>{t.common.required}</Text></Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.firstName} <Text style={[styles.required, { color: colors.destructive }]}>{t.common.required}</Text></Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
                 placeholder={t.contacts.firstNamePlaceholder}
@@ -629,7 +629,7 @@ export default function HomeScreen() {
                 placeholderTextColor={colors.placeholder}
               />
 
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.surname} <Text style={styles.required}>{t.common.required}</Text></Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.surname} <Text style={[styles.required, { color: colors.destructive }]}>{t.common.required}</Text></Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
                 placeholder={t.contacts.surnamePlaceholder}
@@ -643,7 +643,7 @@ export default function HomeScreen() {
                 {(['MALE', 'FEMALE'] as const).map(g => (
                   <Pressable
                     key={g}
-                    style={[styles.genderChip, gender === g && styles.genderChipSelected]}
+                    style={[styles.genderChip, gender === g && [styles.genderChipSelected, { backgroundColor: colors.accent }]]}
                     onPress={() => setGender(prev => prev === g ? null : g)}
                   >
                     <Text style={[styles.genderChipText, gender === g && styles.genderChipTextSelected]}>
@@ -673,7 +673,7 @@ export default function HomeScreen() {
               />
 
               <Pressable style={styles.docToggle} onPress={() => setHasDoc(v => !v)}>
-                <View style={[styles.docToggleBox, hasDoc && styles.docToggleBoxActive]}>
+                <View style={[styles.docToggleBox, hasDoc && [styles.docToggleBoxActive, { borderColor: colors.accent }, { backgroundColor: colors.accent }]]}>
                   {hasDoc && <Ionicons name="checkmark" size={14} color={colors.surface} />}
                 </View>
                 <Text style={styles.docToggleLabel}>{t.contacts.hasDoc}</Text>

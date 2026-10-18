@@ -14,7 +14,7 @@ export default function MenuScreen() {
   return (
     <View style={[styles.container, isDesktop && styles.containerDesktop, { backgroundColor: colors.bg }]}>
       <View style={[styles.inner, isDesktop && styles.innerDesktop]}>
-        <Pressable style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.separator }]} onPress={() => router.push('/notifications')}>
+        <Pressable style={[styles.menuItem, { borderColor: colors.inputBorder }, { backgroundColor: colors.surface, borderColor: colors.separator }]} onPress={() => router.push('/notifications')}>
           <View style={styles.left}>
             <View style={[styles.iconWrap, { backgroundColor: colors.accentSubtle }]}>
               <Ionicons name="notifications" size={18} color={colors.accent} />
@@ -27,7 +27,7 @@ export default function MenuScreen() {
           <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
         </Pressable>
 
-        <Pressable style={[styles.menuItem, { marginTop: r(12, 12, 16), backgroundColor: colors.surface, borderColor: colors.separator }]} onPress={() => router.push('/sync')}>
+        <Pressable style={[styles.menuItem, { borderColor: colors.inputBorder }, { marginTop: r(12, 12, 16), backgroundColor: colors.surface, borderColor: colors.separator }]} onPress={() => router.push('/sync')}>
           <View style={styles.left}>
             <View style={[styles.iconWrap, { backgroundColor: 'rgba(52,168,83,0.12)' }]}>
               <Ionicons name="refresh" size={18} color={colors.success} />
@@ -40,7 +40,7 @@ export default function MenuScreen() {
           <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
         </Pressable>
 
-        <Pressable style={[styles.menuItem, { marginTop: r(12, 12, 16), backgroundColor: colors.surface, borderColor: colors.separator }]} onPress={() => router.push('/config')}>
+        <Pressable style={[styles.menuItem, { borderColor: colors.inputBorder }, { marginTop: r(12, 12, 16), backgroundColor: colors.surface, borderColor: colors.separator }]} onPress={() => router.push('/config')}>
           <View style={styles.left}>
             <View style={[styles.iconWrap, { backgroundColor: colors.accentSubtle }]}>
               <Ionicons name="settings" size={18} color={colors.accent} />

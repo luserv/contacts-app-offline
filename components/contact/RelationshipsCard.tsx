@@ -122,10 +122,10 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
                   keyExtractor={item => item.type_id}
                   renderItem={({ item }) => (
                     <Pressable
-                      style={[styles.optionRow, selectedTypeId === item.type_id && styles.optionRowSelected]}
+                      style={[styles.optionRow, selectedTypeId === item.type_id && [styles.optionRowSelected, { backgroundColor: colors.accentSubtle }]]}
                       onPress={() => setSelectedTypeId(item.type_id)}
                     >
-                      <Text style={[styles.optionText, selectedTypeId === item.type_id && styles.optionTextSelected, { color: colors.accent }]}>
+                      <Text style={[styles.optionText, selectedTypeId === item.type_id && [styles.optionTextSelected, { color: colors.accent }]]}>
                         {item.label}
                       </Text>
                     </Pressable>
@@ -147,7 +147,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
               <>
                 <Text style={s.modalTitle}>{t.relationships.whichContact}</Text>
                 <TextInput
-                  style={styles.searchInput}
+                  style={[styles.searchInput, { backgroundColor: colors.bg }]}
                   placeholder={t.relationships.search}
                   value={search}
                   onChangeText={setSearch}
@@ -159,7 +159,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
                   ListEmptyComponent={<Text style={s.emptyText}>{t.common.noContactsAvailable}</Text>}
                   renderItem={({ item }) => (
                     <Pressable
-                      style={[styles.optionRow, selectedContactId === item.contact_id && styles.optionRowSelected]}
+                      style={[styles.optionRow, selectedContactId === item.contact_id && [styles.optionRowSelected, { backgroundColor: colors.accentSubtle }]]}
                       onPress={() => setSelectedContactId(item.contact_id)}
                     >
                       <View style={styles.relAvatarSmall}>
@@ -167,7 +167,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
                           {item.first_name?.[0]?.toUpperCase()}{item.surname?.[0]?.toUpperCase()}
                         </Text>
                       </View>
-                      <Text style={[styles.optionText, selectedContactId === item.contact_id && styles.optionTextSelected, { color: colors.accent }]}>
+                      <Text style={[styles.optionText, selectedContactId === item.contact_id && [styles.optionTextSelected, { color: colors.accent }]]}>
                         {item.first_name} {item.surname}
                       </Text>
                     </Pressable>

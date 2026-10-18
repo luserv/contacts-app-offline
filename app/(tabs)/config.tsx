@@ -91,11 +91,11 @@ export default function Config() {
           {LANGUAGES.map(l => (
             <Pressable
               key={l.code}
-              style={[styles.langBtn, { backgroundColor: colors.fill, borderColor: colors.separator }, lang === l.code && styles.langBtnActive]}
+              style={[styles.langBtn, { backgroundColor: colors.fill, borderColor: colors.separator }, lang === l.code && [styles.langBtnActive, { borderColor: colors.accent }, { backgroundColor: colors.accentSubtle }]]}
               onPress={() => setLang(l.code)}
             >
               <Text style={styles.langFlag}>{l.flag}</Text>
-              <Text style={[styles.langLabel, { color: colors.text }, lang === l.code && styles.langLabelActive, { color: colors.accent }]}>{t.config[l.transKey]}</Text>
+              <Text style={[styles.langLabel, { color: colors.text }, lang === l.code && [styles.langLabelActive, { color: colors.accent }]]}>{t.config[l.transKey]}</Text>
             </Pressable>
           ))}
         </View>
@@ -111,7 +111,7 @@ export default function Config() {
             {t.config.accountGuestDesc}
           </Text>
           <Pressable
-            style={[styles.button, styles.buttonUpgrade, signInBusy && styles.buttonDisabled]}
+            style={[styles.button, styles.buttonUpgrade, { backgroundColor: colors.accent }, signInBusy && styles.buttonDisabled]}
             onPress={handleGuestSignIn}
             disabled={signInBusy}
           >
@@ -119,7 +119,7 @@ export default function Config() {
               ? <ActivityIndicator color="#fff" />
               : <Text style={styles.buttonText}>{t.config.signInWithGoogle}</Text>}
           </Pressable>
-          {signInError && <Text style={styles.error}>{signInError}</Text>}
+          {signInError && <Text style={[styles.error, { color: colors.destructive }]}>{signInError}</Text>}
         </View>
       )}
 
@@ -133,7 +133,7 @@ export default function Config() {
               {licensed ? t.config.activeLicense : t.config.freePlan}
             </Text>
           </View>
-          <Pressable style={[styles.button, styles.buttonSignOut]} onPress={signOutUser}>
+          <Pressable style={[styles.button, styles.buttonSignOut, { backgroundColor: colors.destructive }]} onPress={signOutUser}>
             <Text style={styles.buttonText}>{t.config.signOut}</Text>
           </Pressable>
         </View>
@@ -150,7 +150,7 @@ export default function Config() {
           </Text>
 
           <Pressable
-            style={[styles.button, styles.buttonUpgrade, (purchasing || !offering) && styles.buttonDisabled]}
+            style={[styles.button, styles.buttonUpgrade, { backgroundColor: colors.accent }, (purchasing || !offering) && styles.buttonDisabled]}
             onPress={handlePurchase}
             disabled={purchasing || !offering}
           >

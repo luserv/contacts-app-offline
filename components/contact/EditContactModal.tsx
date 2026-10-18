@@ -93,7 +93,7 @@ export default function EditContactModal({ visible, contact, onClose, onSaved }:
                 {(['MALE', 'FEMALE'] as const).map(g => (
                   <Pressable
                     key={g}
-                    style={[styles.genderChip, gender === g && styles.genderChipSelected]}
+                    style={[styles.genderChip, gender === g && [styles.genderChipSelected, { borderColor: colors.accent }, { backgroundColor: colors.accent }]]}
                     onPress={() => setGender(prev => prev === g ? null : g)}
                   >
                     <Text style={[styles.genderChipText, gender === g && styles.genderChipTextSelected]}>

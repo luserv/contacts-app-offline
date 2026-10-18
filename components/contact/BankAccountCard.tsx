@@ -152,7 +152,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
                 autoCapitalize="characters" autoFocus
               />
               {bankSuggestions.length > 0 && (
-                <View style={styles.suggestions}>
+                <View style={[styles.suggestions, { borderColor: colors.inputBorder }]}>
                   {bankSuggestions.map(sg => (
                     <Pressable key={sg} style={styles.suggestionRow} onPress={() => { setBankName(sg); setBankSuggestions([]); }}>
                       <Text style={[styles.suggestionText, { color: colors.accent }]}>{sg}</Text>
@@ -176,7 +176,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
                 placeholder={t.bankAccounts.accountTypePlaceholder} placeholderTextColor={colors.placeholder}
               />
               {typeSuggestions.length > 0 && (
-                <View style={styles.suggestions}>
+                <View style={[styles.suggestions, { borderColor: colors.inputBorder }]}>
                   {typeSuggestions.map(sg => (
                     <Pressable key={sg} style={styles.suggestionRow} onPress={() => { setAccountType(sg); setTypeSuggestions([]); }}>
                       <Text style={[styles.suggestionText, { color: colors.accent }]}>{sg}</Text>

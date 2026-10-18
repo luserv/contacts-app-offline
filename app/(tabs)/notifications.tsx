@@ -179,7 +179,7 @@ export default function NotificationsScreen() {
       <Text style={[styles.headerDesc, { color: colors.textSecondary }]}>{t.notificationsScreen.desc}</Text>
 
       {!notificationsAvailable && (
-        <View style={[styles.statusBox, { backgroundColor: colors.statusErrorBg }]}>
+        <View style={[styles.statusBox, { backgroundColor: colors.statusSuccessBg }, { backgroundColor: colors.statusErrorBg }]}>
           <Text style={[styles.statusText, { color: colors.text }]}>{t.notificationsScreen.unavailable}</Text>
         </View>
       )}
@@ -198,7 +198,7 @@ export default function NotificationsScreen() {
           />
         </View>
         {activeCount !== null && (
-          <Text style={styles.activeCount}>{t.notificationsScreen.activeCount(activeCount)}</Text>
+          <Text style={[styles.activeCount, { color: colors.success }]}>{t.notificationsScreen.activeCount(activeCount)}</Text>
         )}
       </View>
 
@@ -209,7 +209,7 @@ export default function NotificationsScreen() {
           {DAYS_OPTIONS.map(d => (
             <Pressable
               key={d}
-              style={[styles.chip, { backgroundColor: colors.fill, borderColor: colors.separator }, settings.daysBefore === d && styles.chipActive]}
+              style={[styles.chip, { backgroundColor: colors.fill, borderColor: colors.separator }, settings.daysBefore === d && [styles.chipActive, { borderColor: colors.accent }, { backgroundColor: colors.accent }]]}
               onPress={() => setSettings(prev => ({ ...prev, daysBefore: d }))}
             >
               <Text style={[styles.chipText, { color: colors.text }, settings.daysBefore === d && styles.chipTextActive]}>
@@ -228,7 +228,7 @@ export default function NotificationsScreen() {
           <View style={styles.timeField}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.notificationsScreen.hour}</Text>
             <TextInput
-              style={[styles.timeInput, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
+              style={[styles.timeInput, { borderColor: colors.inputBorder }, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
               value={hourText}
               onChangeText={formatHour}
               keyboardType={Platform.OS === 'web' ? 'default' : 'numeric'}
@@ -241,7 +241,7 @@ export default function NotificationsScreen() {
           <View style={styles.timeField}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.notificationsScreen.minute}</Text>
             <TextInput
-              style={[styles.timeInput, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
+              style={[styles.timeInput, { borderColor: colors.inputBorder }, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
               value={minuteText}
               onChangeText={formatMinute}
               keyboardType={Platform.OS === 'web' ? 'default' : 'numeric'}
@@ -258,7 +258,7 @@ export default function NotificationsScreen() {
         <Text style={[styles.cardTitle, { color: colors.text }]}>{t.notificationsScreen.customMessage}</Text>
         <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{t.notificationsScreen.messageHelp}</Text>
         <TextInput
-          style={[styles.messageInput, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
+          style={[styles.messageInput, { borderColor: colors.inputBorder }, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
           value={settings.messageTemplate ?? ''}
           onChangeText={text => setSettings(prev => ({ ...prev, messageTemplate: text }))}
           placeholder={t.notificationsScreen.messagePlaceholder}
@@ -269,7 +269,7 @@ export default function NotificationsScreen() {
 
       {/* Acciones */}
       <Pressable
-        style={[styles.button, styles.buttonPrimary, !!loadingOp && styles.buttonDisabled]}
+        style={[styles.button, styles.buttonPrimary, { backgroundColor: colors.accent }, !!loadingOp && styles.buttonDisabled]}
         onPress={handleSaveAndSchedule}
         disabled={!!loadingOp}
       >
@@ -279,7 +279,7 @@ export default function NotificationsScreen() {
       </Pressable>
 
       <Pressable
-        style={[styles.button, styles.buttonDanger, !!loadingOp && styles.buttonDisabled]}
+        style={[styles.button, styles.buttonDanger, { backgroundColor: colors.destructive }, !!loadingOp && styles.buttonDisabled]}
         onPress={handleCancelAll}
         disabled={!!loadingOp}
       >
@@ -289,7 +289,7 @@ export default function NotificationsScreen() {
       </Pressable>
 
       {status && (
-        <View style={[styles.statusBox, { backgroundColor: statusError ? colors.statusErrorBg : colors.statusSuccessBg }]}>
+        <View style={[styles.statusBox, { backgroundColor: colors.statusSuccessBg }, { backgroundColor: statusError ? colors.statusErrorBg : colors.statusSuccessBg }]}>
           <Text style={[styles.statusText, { color: colors.text }]}>{status}</Text>
         </View>
       )}

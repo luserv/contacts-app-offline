@@ -286,7 +286,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
       {/* Phone actions sheet */}
       <Modal visible={!!actionsSheet} animationType="slide" transparent onRequestClose={() => setActionsSheet(null)}>
         <Pressable style={s.modalOverlay} onPress={() => setActionsSheet(null)}>
-          <Pressable style={styles.actionsContainer}>
+          <Pressable style={[styles.actionsContainer, { backgroundColor: colors.bg }]}>
             <Text style={[styles.actionsTitle, { color: colors.textSecondary }]}>{actionsSheet?.phone}</Text>
             <Pressable
               style={[styles.actionRow, { backgroundColor: colors.surface }, styles.actionRowBorder]}
@@ -312,7 +312,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
                 <Text style={[styles.actionLabel, { color: action.color }]}>{action.label}</Text>
               </Pressable>
             ))}
-            <View style={styles.actionsDivider} />
+            <View style={[styles.actionsDivider, { backgroundColor: colors.bg }]} />
             <Pressable style={[styles.actionRow, { backgroundColor: colors.surface }]} onPress={() => setActionsSheet(null)}>
               <Text style={[styles.actionCancel, { color: colors.accent }]}>{t.common.cancel}</Text>
             </Pressable>

@@ -319,7 +319,7 @@ export default function SyncScreen() {
         </Pressable>
 
         <Pressable
-          style={[styles.button, styles.buttonExport, !!loadingOp && styles.buttonDisabled]}
+          style={[styles.button, styles.buttonExport, { backgroundColor: colors.accent }, !!loadingOp && styles.buttonDisabled]}
           onPress={handleExport}
           disabled={!!loadingOp}
         >
@@ -339,7 +339,7 @@ export default function SyncScreen() {
         </Pressable>
 
         {status && (
-          <View style={[styles.statusBox, { backgroundColor: status.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
+          <View style={[styles.statusBox, { backgroundColor: colors.statusSuccessBg }, { backgroundColor: status.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
             <Text style={[styles.statusText, { color: colors.text }]}>{status}</Text>
           </View>
         )}
@@ -360,7 +360,7 @@ export default function SyncScreen() {
               : <Text style={styles.buttonText}>{t.drive.upload}</Text>}
           </Pressable>
           {hasBackup === false && (
-            <View style={[styles.statusBox, { backgroundColor: colors.statusErrorBg, marginBottom: 10 }]}>
+            <View style={[styles.statusBox, { backgroundColor: colors.statusSuccessBg }, { backgroundColor: colors.statusErrorBg, marginBottom: 10 }]}>
               <Text style={[styles.statusText, { color: colors.text }]}>{t.drive.notFound}</Text>
             </View>
           )}
@@ -374,7 +374,7 @@ export default function SyncScreen() {
               : <Text style={styles.buttonText}>{t.drive.restore}</Text>}
           </Pressable>
           {driveStatus && (
-            <View style={[styles.statusBox, { backgroundColor: driveStatus.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
+            <View style={[styles.statusBox, { backgroundColor: colors.statusSuccessBg }, { backgroundColor: driveStatus.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
               <Text style={[styles.statusText, { color: colors.text }]}>{driveStatus}</Text>
             </View>
           )}
@@ -405,7 +405,7 @@ export default function SyncScreen() {
           </Pressable>
           <Text style={[styles.syncHint, { color: colors.textSecondary }]}>{lastSyncLabel}</Text>
           {syncStatus && (
-            <View style={[styles.statusBox, { backgroundColor: syncStatus.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
+            <View style={[styles.statusBox, { backgroundColor: colors.statusSuccessBg }, { backgroundColor: syncStatus.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
               <Text style={[styles.statusText, { color: colors.text }]}>{syncStatus}</Text>
             </View>
           )}
