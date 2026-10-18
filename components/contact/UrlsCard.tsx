@@ -52,7 +52,7 @@ export default function UrlsCard({ contactId, initialUrls }: Props) {
     <>
       {urls.length === 0 ? (
         <Pressable style={s.addRow} onPress={openAdd}>
-          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
           <Text style={s.addRowLabel}>{t.urls.title}</Text>
         </Pressable>
       ) : (
@@ -66,9 +66,9 @@ export default function UrlsCard({ contactId, initialUrls }: Props) {
           {urls.map((item, i) => (
             <View key={item.id} style={[styles.row, i === urls.length - 1 && styles.lastRow]}>
               <View style={styles.info}>
-                {item.label ? <Text style={styles.label}>{item.label}</Text> : null}
+                {item.label ? <Text style={[styles.label, { color: colors.textSecondary }]}>{item.label}</Text> : null}
                 <Pressable onPress={() => handleOpen(item.url)}>
-                  <Text style={styles.urlText} numberOfLines={1}>{item.url}</Text>
+                  <Text style={[styles.urlText, { color: colors.accent }]} numberOfLines={1}>{item.url}</Text>
                 </Pressable>
               </View>
               <Pressable onPress={() => handleRemove(item)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
@@ -134,6 +134,6 @@ const styles = StyleSheet.create({
   },
   lastRow: { borderBottomWidth: 0 },
   info: { flex: 1 },
-  label: { fontSize: 11, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
-  urlText: { fontSize: 15, color: '#007AFF' },
+  label: { fontSize: 11, color: '#6C6C70', fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
+  urlText: { fontSize: 15, color: '#0066D6' },
 });

@@ -176,7 +176,7 @@ export default function NotificationsScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.bg }]} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
-      <Text style={styles.headerDesc}>{t.notificationsScreen.desc}</Text>
+      <Text style={[styles.headerDesc, { color: colors.textSecondary }]}>{t.notificationsScreen.desc}</Text>
 
       {!notificationsAvailable && (
         <View style={[styles.statusBox, { backgroundColor: colors.statusErrorBg }]}>
@@ -189,7 +189,7 @@ export default function NotificationsScreen() {
         <View style={styles.toggleRow}>
           <View style={{ flex: 1, paddingRight: 12 }}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>{t.notificationsScreen.enabled}</Text>
-            <Text style={styles.cardDesc}>{t.notificationsScreen.enabledDesc}</Text>
+            <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{t.notificationsScreen.enabledDesc}</Text>
           </View>
           <Switch
             value={settings.enabled}
@@ -223,10 +223,10 @@ export default function NotificationsScreen() {
       {/* Hora */}
       <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>{t.notificationsScreen.time}</Text>
-        <Text style={styles.cardDesc}>{t.notificationsScreen.timeDesc}</Text>
+        <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{t.notificationsScreen.timeDesc}</Text>
         <View style={styles.timeRow}>
           <View style={styles.timeField}>
-            <Text style={styles.fieldLabel}>{t.notificationsScreen.hour}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.notificationsScreen.hour}</Text>
             <TextInput
               style={[styles.timeInput, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
               value={hourText}
@@ -239,7 +239,7 @@ export default function NotificationsScreen() {
           </View>
           <Text style={[styles.timeColon, { color: colors.textSecondary }]}>:</Text>
           <View style={styles.timeField}>
-            <Text style={styles.fieldLabel}>{t.notificationsScreen.minute}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.notificationsScreen.minute}</Text>
             <TextInput
               style={[styles.timeInput, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
               value={minuteText}
@@ -256,7 +256,7 @@ export default function NotificationsScreen() {
       {/* Mensaje */}
       <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>{t.notificationsScreen.customMessage}</Text>
-        <Text style={styles.cardDesc}>{t.notificationsScreen.messageHelp}</Text>
+        <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{t.notificationsScreen.messageHelp}</Text>
         <TextInput
           style={[styles.messageInput, { backgroundColor: colors.fill, borderColor: colors.inputBorder, color: colors.text }]}
           value={settings.messageTemplate ?? ''}
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   contentDesktop: { paddingHorizontal: 32, paddingVertical: 28 },
   loaderContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F2F2F7' },
 
-  headerDesc: { fontSize: 14, color: '#8E8E93', marginBottom: 16, lineHeight: 20 },
+  headerDesc: { fontSize: 14, color: '#6C6C70', marginBottom: 16, lineHeight: 20 },
 
   card: {
     backgroundColor: '#fff',
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardTitle: { fontSize: 17, fontWeight: '600', color: '#333', marginBottom: 6 },
-  cardDesc: { fontSize: 13, color: '#8E8E93', marginBottom: 12, lineHeight: 18 },
+  cardDesc: { fontSize: 13, color: '#6C6C70', marginBottom: 12, lineHeight: 18 },
 
   toggleRow: { flexDirection: 'row', alignItems: 'center' },
   activeCount: { fontSize: 13, color: '#34C759', marginTop: 8, fontWeight: '500' },
@@ -326,22 +326,22 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 14, paddingVertical: 14, borderRadius: 16,
     borderWidth: 1, borderColor: '#C7C7CC', backgroundColor: '#F9F9F9',
-    minHeight: 44, justifyContent: 'center',
+    minHeight: 48, justifyContent: 'center',
   },
-  chipActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+  chipActive: { backgroundColor: '#0066D6', borderColor: '#0066D6' },
   chipText: { fontSize: 13, color: '#555' },
   chipTextActive: { color: '#fff', fontWeight: '600' },
 
   timeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   timeField: { flex: 1 },
-  fieldLabel: { fontSize: 12, color: '#8E8E93', marginBottom: 6, fontWeight: '600' },
+  fieldLabel: { fontSize: 12, color: '#6C6C70', marginBottom: 6, fontWeight: '600' },
   timeInput: {
     borderWidth: 1, borderColor: '#E5E5EA', borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 10,
     fontSize: 18, color: '#000', backgroundColor: '#F9F9F9',
     textAlign: 'center',
   },
-  timeColon: { fontSize: 22, fontWeight: '700', color: '#8E8E93', paddingBottom: 10 },
+  timeColon: { fontSize: 22, fontWeight: '700', color: '#6C6C70', paddingBottom: 10 },
 
   messageInput: {
     borderWidth: 1, borderColor: '#E5E5EA', borderRadius: 10,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14, borderRadius: 10,
     alignItems: 'center', marginTop: 6, marginBottom: 8,
   },
-  buttonPrimary: { backgroundColor: '#007AFF' },
+  buttonPrimary: { backgroundColor: '#0066D6' },
   buttonDanger: { backgroundColor: '#FF3B30' },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },

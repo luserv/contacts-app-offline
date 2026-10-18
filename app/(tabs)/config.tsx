@@ -86,7 +86,7 @@ export default function Config() {
       {/* Idioma */}
       <View style={[styles.card, { marginBottom: 16, backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>{t.config.language}</Text>
-        <Text style={styles.cardDesc}>{t.config.languageDesc}</Text>
+        <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{t.config.languageDesc}</Text>
         <View style={styles.langRow}>
           {LANGUAGES.map(l => (
             <Pressable
@@ -95,7 +95,7 @@ export default function Config() {
               onPress={() => setLang(l.code)}
             >
               <Text style={styles.langFlag}>{l.flag}</Text>
-              <Text style={[styles.langLabel, { color: colors.text }, lang === l.code && styles.langLabelActive]}>{t.config[l.transKey]}</Text>
+              <Text style={[styles.langLabel, { color: colors.text }, lang === l.code && styles.langLabelActive, { color: colors.accent }]}>{t.config[l.transKey]}</Text>
             </Pressable>
           ))}
         </View>
@@ -107,7 +107,7 @@ export default function Config() {
           <Text style={[styles.cardTitle, { color: colors.text }]}>
             {t.config.account}
           </Text>
-          <Text style={styles.cardDesc}>
+          <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>
             {t.config.accountGuestDesc}
           </Text>
           <Pressable
@@ -129,7 +129,7 @@ export default function Config() {
           <Text style={[styles.cardTitle, { color: colors.text }]}>{t.config.account}</Text>
           <View style={styles.accountRow}>
             <Text style={[styles.accountEmail, { color: colors.text }]}>{user.email}</Text>
-            <Text style={styles.accountLicense}>
+            <Text style={[styles.accountLicense, { color: colors.textSecondary }]}>
               {licensed ? t.config.activeLicense : t.config.freePlan}
             </Text>
           </View>
@@ -145,7 +145,7 @@ export default function Config() {
           <Text style={[styles.cardTitle, { color: colors.text }]}>
             {t.config.removeAds}
           </Text>
-          <Text style={styles.cardDesc}>
+          <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>
             {t.config.removeAdsDesc}
           </Text>
 
@@ -170,7 +170,7 @@ export default function Config() {
           >
             {restoring
               ? <ActivityIndicator color="#007AFF" size="small" />
-              : <Text style={styles.buttonRestoreText}>
+              : <Text style={[styles.buttonRestoreText, { color: colors.accent }]}>
                   {t.config.restorePurchase}
                 </Text>}
           </Pressable>
@@ -200,7 +200,7 @@ export default function Config() {
               ))}
             </View>
           ) : (
-            <Text style={styles.premiumHint}>
+            <Text style={[styles.premiumHint, { color: colors.textSecondary }]}>
               {t.config.darkModePremium}
             </Text>
           )}
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
   cardDesc: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: '#6C6C70',
     marginBottom: 16,
     lineHeight: 20,
   },
@@ -265,12 +265,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9F9F9',
   },
   langBtnActive: {
-    borderColor: '#007AFF',
+    borderColor: '#0066D6',
     backgroundColor: '#E5F0FF',
   },
   langFlag: { fontSize: 20 },
   langLabel: { fontSize: 15, color: '#333', fontWeight: '500' },
-  langLabelActive: { color: '#007AFF', fontWeight: '700' },
+  langLabelActive: { color: '#0066D6', fontWeight: '700' },
   button: {
     paddingVertical: 14,
     borderRadius: 10,
@@ -280,18 +280,18 @@ const styles = StyleSheet.create({
   buttonSignOut: { backgroundColor: '#FF3B30' },
   accountRow: { marginBottom: 16 },
   accountEmail: { fontSize: 15, fontWeight: '600', color: '#000', marginBottom: 4 },
-  accountLicense: { fontSize: 13, color: '#8E8E93' },
+  accountLicense: { fontSize: 13, color: '#6C6C70' },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  buttonUpgrade: { backgroundColor: '#007AFF' },
-  buttonRestore: { alignItems: 'center', paddingVertical: 14, minHeight: 44, justifyContent: 'center' },
-  buttonRestoreText: { fontSize: 14, color: '#007AFF' },
+  buttonUpgrade: { backgroundColor: '#0066D6' },
+  buttonRestore: { alignItems: 'center', paddingVertical: 14, minHeight: 48, justifyContent: 'center' },
+  buttonRestoreText: { fontSize: 14, color: '#0066D6' },
   themeRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   themeBtn: {
     flex: 1, paddingVertical: 10, borderRadius: 10,
     borderWidth: 1.5, alignItems: 'center',
   },
   themeBtnText: { fontSize: 14 },
-  premiumHint: { fontSize: 13, color: '#8E8E93', lineHeight: 20, marginTop: 4 },
+  premiumHint: { fontSize: 13, color: '#6C6C70', lineHeight: 20, marginTop: 4 },
   error: { color: '#FF3B30', fontSize: 13, textAlign: 'center', marginTop: 8 },
 });

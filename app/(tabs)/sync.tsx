@@ -306,7 +306,7 @@ export default function SyncScreen() {
       {/* Base de datos */}
       <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>{t.config.database}</Text>
-        <Text style={styles.cardDesc}>{t.config.databaseDesc}</Text>
+        <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{t.config.databaseDesc}</Text>
 
         <Pressable
           style={[styles.button, styles.buttonVcf, !!loadingOp && styles.buttonDisabled]}
@@ -349,7 +349,7 @@ export default function SyncScreen() {
       {user && (
         <View style={[styles.card, { marginTop: 16, backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>{t.drive.title}</Text>
-          <Text style={styles.cardDesc}>{t.drive.desc}</Text>
+          <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{t.drive.desc}</Text>
           <Pressable
             style={[styles.button, styles.buttonDrive, !!loadingOp && styles.buttonDisabled]}
             onPress={handleDriveUpload}
@@ -385,7 +385,7 @@ export default function SyncScreen() {
       {user && (
         <View style={[styles.card, { marginTop: 16, backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacity }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>{t.sync.title}</Text>
-          <Text style={styles.cardDesc}>{t.sync.desc}</Text>
+          <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{t.sync.desc}</Text>
           <View style={styles.syncRow}>
             <Text style={[styles.syncLabel, { color: colors.text }]}>{t.sync.autoLabel}</Text>
             <Switch
@@ -403,7 +403,7 @@ export default function SyncScreen() {
               ? <ActivityIndicator color="#1A73E8" />
               : <Text style={styles.buttonTextSync}>{t.sync.syncNow}</Text>}
           </Pressable>
-          <Text style={[styles.syncHint, { color: colors.textSecondary ?? '#8E8E93' }]}>{lastSyncLabel}</Text>
+          <Text style={[styles.syncHint, { color: colors.textSecondary }]}>{lastSyncLabel}</Text>
           {syncStatus && (
             <View style={[styles.statusBox, { backgroundColor: syncStatus.startsWith('Error') ? colors.statusErrorBg : colors.statusSuccessBg }]}>
               <Text style={[styles.statusText, { color: colors.text }]}>{syncStatus}</Text>
@@ -425,12 +425,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08, shadowRadius: 3, elevation: 2,
   },
   cardTitle: { fontSize: 17, fontWeight: '600', color: '#333', marginBottom: 6 },
-  cardDesc: { fontSize: 14, color: '#8E8E93', marginBottom: 16, lineHeight: 20 },
+  cardDesc: { fontSize: 14, color: '#6C6C70', marginBottom: 16, lineHeight: 20 },
   button: {
     paddingVertical: 14, borderRadius: 10, alignItems: 'center', marginBottom: 10,
   },
   buttonVcf: { backgroundColor: '#5856D6' },
-  buttonExport: { backgroundColor: '#007AFF' },
+  buttonExport: { backgroundColor: '#0066D6' },
   buttonImport: { backgroundColor: '#34C759' },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   buttonTextSync: { fontSize: 16, fontWeight: '600', color: '#1A73E8' },
   syncRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   syncLabel: { fontSize: 15, fontWeight: '500' },
-  syncHint: { fontSize: 12, color: '#8E8E93', marginTop: 4, marginBottom: 4 },
+  syncHint: { fontSize: 12, color: '#6C6C70', marginTop: 4, marginBottom: 4 },
   statusBox: { marginTop: 8, padding: 12, backgroundColor: '#E8F5E9', borderRadius: 8 },
   statusBoxError: { backgroundColor: '#FFEBEE' },
   statusText: { fontSize: 14, color: '#333' },

@@ -82,7 +82,9 @@ export default function CalendarScreen() {
     else setViewMonth(m => m + 1);
   };
 
-  const cellSize = Math.floor(Math.min(width, 600) / 7);
+  // Container max widths mirror the layout wrapper below; 24 = grid horizontal padding (12 + 12).
+  const containerWidth = Math.min(width, isDesktop ? 800 : isTablet ? 680 : width);
+  const cellSize = Math.floor((containerWidth - 24) / 7);
 
   const cells: (number | null)[] = [
     ...Array(firstDow).fill(null),
@@ -115,11 +117,11 @@ export default function CalendarScreen() {
       { backgroundColor: colors.bg },
     ]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.separator }]}>
-        <Pressable onPress={prevMonth} style={styles.navBtn} hitSlop={10}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t.common.prevMonth} onPress={prevMonth} style={styles.navBtn} hitSlop={10}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={[styles.monthTitle, { color: colors.text }]}>{monthLabel(viewMonth)} {viewYear}</Text>
-        <Pressable onPress={nextMonth} style={styles.navBtn} hitSlop={10}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t.common.nextMonth} onPress={nextMonth} style={styles.navBtn} hitSlop={10}>
           <Ionicons name="chevron-forward" size={22} color={colors.text} />
         </Pressable>
       </View>
@@ -195,7 +197,7 @@ export default function CalendarScreen() {
               <Text style={[styles.sheetTitle, { color: colors.text }]}>
                 {selectedDay} {selectedDay ? monthLabel(viewMonth) : ''}
               </Text>
-              <Pressable onPress={() => setModalVisible(false)} hitSlop={10}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t.common.close} onPress={() => setModalVisible(false)} hitSlop={10}>
                 <Ionicons name="close" size={20} color={colors.textSecondary} />
               </Pressable>
             </View>
@@ -234,7 +236,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14,
     backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee',
   },
-  navBtn: { padding: 10, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
+  navBtn: { padding: 10, minHeight: 48, minWidth: 48, alignItems: 'center', justifyContent: 'center' },
   monthTitle: { fontSize: 17, fontWeight: '700', color: '#222' },
   dowRow: {
     flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8,

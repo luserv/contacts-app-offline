@@ -25,7 +25,7 @@ export default function ContactDetailScreen() {
   const { t, lang } = useI18n();
   const { isDesktop, isTablet, r } = useResponsive();
   const { colors } = useTheme();
-  const { getContact, getIdentityCards, getRelationships, getContactOrganizations, getContactPhones, getContactEmails, getContactKeywords, getBankAccounts, getContactNotes, getContactUrls, deleteContact } = useContacts();
+  const { getContact, getIdentityCards, getRelationships, getContactOrganizations, getContactPhones, getContactEmails, getContactKeywords, getBankAccounts, getContactNotes, getContactUrls, getMaritalStatuses, deleteContact } = useContacts();
 
   const [contact, setContact] = useState<ContactDetail | null>(null);
   const [identityCards, setIdentityCards] = useState<IdentityCard[]>([]);
@@ -37,6 +37,7 @@ export default function ContactDetailScreen() {
   const [bankAccounts, setBankAccounts] = useState<ContactBankAccount[]>([]);
   const [notes, setNotes] = useState<ContactNote[]>([]);
   const [contactUrls, setContactUrls] = useState<ContactUrl[]>([]);
+  const [maritalLabels, setMaritalLabels] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editVisible, setEditVisible] = useState(false);
@@ -89,6 +90,8 @@ export default function ContactDetailScreen() {
       setBankAccounts(await getBankAccounts(contactId));
       setNotes(await getContactNotes(contactId));
       setContactUrls(await getContactUrls(contactId));
+      const statuses = await getMaritalStatuses();
+      setMaritalLabels(Object.fromEntries(statuses.map(ms => [ms.status_id, ms.marital_status])));
     } catch {
       setError(t.detail.loadError);
     } finally {
@@ -137,7 +140,7 @@ export default function ContactDetailScreen() {
     contact.status_id ? {
       key: 'status',
       label: t.detail.maritalLabel,
-      value: contact.status_id,
+      value: maritalLabels[contact.status_id] ?? contact.status_id,
     } : null,
   ].filter(Boolean) as { key: string; label: string; value: string; helperText?: string | null }[];
 
@@ -233,7 +236,7 @@ const styles = StyleSheet.create({
   zodiacRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   zodiacSymbol: { fontSize: 20 },
   zodiacName: { fontSize: 13, fontWeight: '700', color: '#555' },
-  zodiacDesc: { fontSize: 13, color: '#8E8E93', textAlign: 'center', flexShrink: 1 },
+  zodiacDesc: { fontSize: 13, color: '#6C6C70', textAlign: 'center', flexShrink: 1 },
 
   card: {
     backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16,
@@ -244,11 +247,11 @@ const styles = StyleSheet.create({
   cardActions: { flexDirection: 'row', gap: 8 },
   cardTitle: { fontSize: 17, fontWeight: '600', color: '#333' },
 
-  editButton: { paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#007AFF', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  editButtonText: { color: '#007AFF', fontSize: 14, fontWeight: '600' },
-  deleteButton: { paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#FF3B30', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  editButton: { paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#0066D6', minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  editButtonText: { color: '#0066D6', fontSize: 14, fontWeight: '600' },
+  deleteButton: { paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#FF3B30', minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   deleteButtonText: { color: '#FF3B30', fontSize: 14, fontWeight: '600' },
 
   errorText: { fontSize: 16, color: '#FF3B30', marginBottom: 10 },
-  backLink: { fontSize: 16, color: '#007AFF' },
+  backLink: { fontSize: 16, color: '#0066D6' },
 });

@@ -46,7 +46,7 @@ export default function NotesCard({ contactId, initialNotes }: Props) {
     <>
       {notes.length === 0 ? (
         <Pressable style={s.addRow} onPress={openAdd}>
-          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
           <Text style={s.addRowLabel}>{t.notes.title}</Text>
         </Pressable>
       ) : (

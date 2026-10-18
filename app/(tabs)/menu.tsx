@@ -21,7 +21,7 @@ export default function MenuScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.itemTitle, { color: colors.text }]}>{t.tabs.notifications}</Text>
-              <Text style={styles.itemSubtitle}>{t.menu.notifications}</Text>
+              <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]}>{t.menu.notifications}</Text>
             </View>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
@@ -34,7 +34,7 @@ export default function MenuScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.itemTitle, { color: colors.text }]}>{t.tabs.sync}</Text>
-              <Text style={styles.itemSubtitle}>{t.menu.sync}</Text>
+              <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]}>{t.menu.sync}</Text>
             </View>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
@@ -47,7 +47,7 @@ export default function MenuScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.itemTitle, { color: colors.text }]}>{t.config.title}</Text>
-              <Text style={styles.itemSubtitle}>{t.menu.config}</Text>
+              <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]}>{t.menu.config}</Text>
             </View>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
@@ -83,5 +83,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   itemTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
-  itemSubtitle: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
+  itemSubtitle: { fontSize: 12, color: '#6C6C70', marginTop: 2 },
 });

@@ -82,7 +82,7 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
     <>
       {cards.length === 0 ? (
         <Pressable style={s.addRow} onPress={openAddModal}>
-          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
           <Text style={s.addRowLabel}>{t.documents.title}</Text>
         </Pressable>
       ) : (
@@ -96,7 +96,7 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
           {cards.map(doc => (
             <View key={doc.id} style={styles.docRow}>
               <View style={styles.docInfo}>
-                <Text style={styles.docType}>{doc.doc_type}</Text>
+                <Text style={[styles.docType, { color: colors.textSecondary }]}>{doc.doc_type}</Text>
                 <Text style={styles.docNumber}>
                   {doc.doc_type === t.contactList.docDriversLicense ? `${t.documents.licenseType}: ` : ''}{doc.card_number}
                 </Text>
@@ -110,10 +110,10 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
                   Alert.alert(t.contactInfo.phoneActions.copied);
                 }}
               >
-                <Text style={styles.editBtnText}>📋</Text>
+                <Text style={[styles.editBtnText, { color: colors.accent }]}>📋</Text>
               </Pressable>
               <Pressable onPress={() => openEditModal(doc)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
-                <Text style={styles.editBtnText}>{t.common.edit}</Text>
+                <Text style={[styles.editBtnText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemove(doc)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
@@ -185,9 +185,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee',
   },
   docInfo: { flex: 1 },
-  docType: { fontSize: 12, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
+  docType: { fontSize: 12, color: '#6C6C70', fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
   docNumber: { fontSize: 16, color: '#000', fontWeight: '500' },
   docDate: { fontSize: 13, color: '#555', marginTop: 2 },
-  editBtn: { paddingHorizontal: 8, paddingVertical: 8, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  editBtnText: { fontSize: 14, color: '#007AFF' },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  editBtnText: { fontSize: 14, color: '#0066D6' },
 });

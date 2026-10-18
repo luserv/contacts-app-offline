@@ -57,7 +57,7 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
   if (keywords.length === 0 && !adding) {
     return (
       <Pressable style={s.addRow} onPress={openInput}>
-        <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+        <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
         <Text style={s.addRowLabel}>{t.keywords.title}</Text>
       </Pressable>
     );
@@ -77,9 +77,9 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
       <View style={styles.chipsContainer}>
         {keywords.map(kw => (
           <Pressable key={kw.id} style={styles.chip} onLongPress={() => handleRemove(kw)}>
-            <Text style={styles.chipText}>{kw.keyword}</Text>
+            <Text style={[styles.chipText, { color: colors.accent }]}>{kw.keyword}</Text>
             <Pressable onPress={() => handleRemove(kw)} hitSlop={6} accessibilityLabel={t.common.delete}>
-              <Text style={styles.chipRemove}>✕</Text>
+              <Text style={[styles.chipRemove, { color: colors.accent }]}>✕</Text>
             </Pressable>
           </Pressable>
         ))}
@@ -114,12 +114,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5F0FF', borderRadius: 20,
     paddingHorizontal: 12, paddingVertical: 6,
   },
-  chipText: { fontSize: 14, color: '#007AFF', fontWeight: '500' },
-  chipRemove: { fontSize: 11, color: '#007AFF', fontWeight: '700' },
+  chipText: { fontSize: 14, color: '#0066D6', fontWeight: '500' },
+  chipRemove: { fontSize: 11, color: '#0066D6', fontWeight: '700' },
   inputChip: {
     backgroundColor: '#F2F2F7', borderRadius: 20,
     paddingHorizontal: 12, paddingVertical: 6,
-    borderWidth: 1, borderColor: '#007AFF', minWidth: 120,
+    borderWidth: 1, borderColor: '#0066D6', minWidth: 120,
   },
   inputChipText: { fontSize: 14, color: '#000', minWidth: 100 },
 });

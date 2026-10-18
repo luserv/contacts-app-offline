@@ -217,18 +217,18 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
 
         {phones.length === 0 ? (
           <Pressable style={s.addRowInline} onPress={openAddPhoneModal}>
-            <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+            <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
             <Text style={s.addRowLabel}>{t.contactInfo.addPhone}</Text>
           </Pressable>
         ) : (
           phones.map(p => (
             <View key={p.id} style={styles.row}>
               <Pressable style={styles.info} onPress={() => openPhoneActions(p.phone)}>
-                {p.label ? <Text style={styles.label}>{p.label}</Text> : null}
-                <Text style={styles.phoneValue}>{p.phone}</Text>
+                {p.label ? <Text style={[styles.label, { color: colors.textSecondary }]}>{p.label}</Text> : null}
+                <Text style={[styles.phoneValue, { color: colors.accent }]}>{p.phone}</Text>
               </Pressable>
               <Pressable onPress={() => openEditPhoneModal(p)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
-                <Text style={styles.editBtnText}>{t.common.edit}</Text>
+                <Text style={[styles.editBtnText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemovePhone(p)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
@@ -252,28 +252,28 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
 
         {emails.length === 0 ? (
           <Pressable style={s.addRowInline} onPress={openAddEmailModal}>
-            <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+            <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
             <Text style={s.addRowLabel}>{t.contactInfo.addEmail}</Text>
           </Pressable>
         ) : (
           emails.map(e => (
             <View key={e.id} style={styles.row}>
               <Pressable style={styles.info} onPress={() => Linking.openURL(`mailto:${e.email}`)}>
-                {e.label ? <Text style={styles.label}>{e.label}</Text> : null}
+                {e.label ? <Text style={[styles.label, { color: colors.textSecondary }]}>{e.label}</Text> : null}
                 <Text style={[styles.value, { color: colors.text }]}>{e.email}</Text>
               </Pressable>
               <Pressable
                 style={styles.editBtn}
-                accessibilityLabel={t.contactInfo.phoneActions.copyToClipboard}
+                accessibilityLabel={t.common.copyEmail}
                 onPress={async () => {
                   await copyToClipboard(e.email);
                   Alert.alert(t.contactInfo.phoneActions.copied);
                 }}
               >
-                <Text style={styles.editBtnText}>📋</Text>
+                <Text style={[styles.editBtnText, { color: colors.accent }]}>📋</Text>
               </Pressable>
               <Pressable onPress={() => openEditEmailModal(e)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
-                <Text style={styles.editBtnText}>{t.common.edit}</Text>
+                <Text style={[styles.editBtnText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemoveEmail(e)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
@@ -287,7 +287,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
       <Modal visible={!!actionsSheet} animationType="slide" transparent onRequestClose={() => setActionsSheet(null)}>
         <Pressable style={s.modalOverlay} onPress={() => setActionsSheet(null)}>
           <Pressable style={styles.actionsContainer}>
-            <Text style={styles.actionsTitle}>{actionsSheet?.phone}</Text>
+            <Text style={[styles.actionsTitle, { color: colors.textSecondary }]}>{actionsSheet?.phone}</Text>
             <Pressable
               style={[styles.actionRow, { backgroundColor: colors.surface }, styles.actionRowBorder]}
               onPress={async () => {
@@ -296,7 +296,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
                 Alert.alert(t.contactInfo.phoneActions.copied);
               }}
             >
-              <Text style={[styles.actionLabel, { color: '#8E8E93' }]}>{t.contactInfo.phoneActions.copyToClipboard}</Text>
+              <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>{t.contactInfo.phoneActions.copyToClipboard}</Text>
             </Pressable>
             {actionsSheet?.actions.map((action, i) => (
               <Pressable
@@ -314,7 +314,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
             ))}
             <View style={styles.actionsDivider} />
             <Pressable style={[styles.actionRow, { backgroundColor: colors.surface }]} onPress={() => setActionsSheet(null)}>
-              <Text style={styles.actionCancel}>{t.common.cancel}</Text>
+              <Text style={[styles.actionCancel, { color: colors.accent }]}>{t.common.cancel}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -333,7 +333,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
                 placeholder={t.contacts.phonePlaceholder} placeholderTextColor={colors.placeholder}
                 keyboardType="phone-pad" autoFocus
               />
-              <Text style={styles.phoneHint}>{t.contactInfo.phoneHint}</Text>
+              <Text style={[styles.phoneHint, { color: colors.textSecondary }]}>{t.contactInfo.phoneHint}</Text>
               <Text style={s.fieldLabel}>{t.contactInfo.phoneLabel}</Text>
               <TextInput
                 style={s.input} value={phoneLabelInput} onChangeText={setPhoneLabelInput}
@@ -394,17 +394,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee',
   },
   info: { flex: 1 },
-  label: { fontSize: 11, color: '#8E8E93', marginBottom: 2 },
-  phoneValue: { fontSize: 17, color: '#007AFF', fontWeight: '500' },
+  label: { fontSize: 11, color: '#6C6C70', marginBottom: 2 },
+  phoneValue: { fontSize: 17, color: '#0066D6', fontWeight: '500' },
   value: { fontSize: 16, color: '#000' },
   callBtn: {
     paddingHorizontal: 10, paddingVertical: 7,
     backgroundColor: '#E5F0FF', borderRadius: 8, marginRight: 6,
-    minHeight: 44, alignItems: 'center', justifyContent: 'center',
+    minHeight: 48, alignItems: 'center', justifyContent: 'center',
   },
-  callBtnText: { fontSize: 12, color: '#007AFF', fontWeight: '600' },
-  editBtn: { paddingHorizontal: 8, paddingVertical: 8, marginRight: 2, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  editBtnText: { fontSize: 14, color: '#007AFF' },
+  callBtnText: { fontSize: 12, color: '#0066D6', fontWeight: '600' },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, marginRight: 2, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  editBtnText: { fontSize: 14, color: '#0066D6' },
   sectionDivider: { height: 1, backgroundColor: '#E5E5EA', marginVertical: 12 },
   actionsContainer: {
     backgroundColor: '#F2F2F7',
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   },
   actionsTitle: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: '#6C6C70',
     textAlign: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -437,6 +437,6 @@ const styles = StyleSheet.create({
   },
   actionLabel: { fontSize: 17 },
   actionsDivider: { height: 8, backgroundColor: '#F2F2F7' },
-  actionCancel: { fontSize: 17, fontWeight: '600', color: '#007AFF' },
-  phoneHint: { fontSize: 12, color: '#8E8E93', marginTop: 4, marginBottom: 12, lineHeight: 16 },
+  actionCancel: { fontSize: 17, fontWeight: '600', color: '#0066D6' },
+  phoneHint: { fontSize: 12, color: '#6C6C70', marginTop: 4, marginBottom: 12, lineHeight: 16 },
 });

@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    minHeight: 44,
+    minHeight: 48,
   },
   triggerText: { fontSize: 16 },
   arrow: { fontSize: 11 },

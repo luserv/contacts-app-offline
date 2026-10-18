@@ -108,7 +108,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
     <>
       {accounts.length === 0 ? (
         <Pressable style={s.addRow} onPress={openAddModal}>
-          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
           <Text style={s.addRowLabel}>{t.bankAccounts.title}</Text>
         </Pressable>
       ) : (
@@ -122,13 +122,13 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
           {accounts.map(acc => (
             <View key={acc.id} style={styles.row}>
               <View style={styles.info}>
-                {acc.bank_name ? <Text style={styles.bankName}>{acc.bank_name}</Text> : null}
+                {acc.bank_name ? <Text style={[styles.bankName, { color: colors.textSecondary }]}>{acc.bank_name}</Text> : null}
                 <Text style={styles.accountNumber}>{acc.account_number}</Text>
                 {acc.account_type ? <Text style={styles.meta}>{acc.account_type}</Text> : null}
                 {acc.label ? <Text style={styles.meta}>{acc.label}</Text> : null}
               </View>
               <Pressable onPress={() => openEditModal(acc)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
-                <Text style={styles.editBtnText}>{t.common.edit}</Text>
+                <Text style={[styles.editBtnText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemove(acc)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
@@ -155,7 +155,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
                 <View style={styles.suggestions}>
                   {bankSuggestions.map(sg => (
                     <Pressable key={sg} style={styles.suggestionRow} onPress={() => { setBankName(sg); setBankSuggestions([]); }}>
-                      <Text style={styles.suggestionText}>{sg}</Text>
+                      <Text style={[styles.suggestionText, { color: colors.accent }]}>{sg}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -179,7 +179,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
                 <View style={styles.suggestions}>
                   {typeSuggestions.map(sg => (
                     <Pressable key={sg} style={styles.suggestionRow} onPress={() => { setAccountType(sg); setTypeSuggestions([]); }}>
-                      <Text style={styles.suggestionText}>{sg}</Text>
+                      <Text style={[styles.suggestionText, { color: colors.accent }]}>{sg}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -215,11 +215,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee',
   },
   info: { flex: 1 },
-  bankName: { fontSize: 12, color: '#8E8E93', fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
+  bankName: { fontSize: 12, color: '#6C6C70', fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
   accountNumber: { fontSize: 16, color: '#000', fontWeight: '500' },
   meta: { fontSize: 13, color: '#555', marginTop: 2 },
-  editBtn: { paddingHorizontal: 8, paddingVertical: 8, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  editBtnText: { fontSize: 14, color: '#007AFF' },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  editBtnText: { fontSize: 14, color: '#0066D6' },
   suggestions: {
     borderWidth: 1, borderColor: '#E5E5EA', borderRadius: 8,
     backgroundColor: '#fff', marginTop: 4, marginBottom: 4,
@@ -228,5 +228,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#F2F2F7',
   },
-  suggestionText: { fontSize: 15, color: '#007AFF' },
+  suggestionText: { fontSize: 15, color: '#0066D6' },
 });

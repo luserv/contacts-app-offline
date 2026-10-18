@@ -41,6 +41,8 @@ export function SwipeableNote({ note, onPress, onDelete }: Props) {
 
     return (
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t.common.delete}
         onPress={() => {
           onDelete();
         }}

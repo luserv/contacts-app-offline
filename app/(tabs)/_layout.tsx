@@ -27,12 +27,13 @@ export default function TabsLayout() {
           paddingTop: insets.top,
         } : {
           ...styles.tabBarBottom,
+          minHeight: 56,
           backgroundColor: colors.surface,
           borderTopColor: colors.separator,
         },
         tabBarLabelStyle: isDesktop && isWeb
           ? { fontSize: 13, fontWeight: '600' }
-          : { fontSize: 10, fontWeight: '500', marginBottom: 2 },
+          : { fontSize: 11, lineHeight: 14, fontWeight: '500', marginBottom: 2 },
         tabBarIconStyle: isDesktop && isWeb ? { marginBottom: 0 } : undefined,
         tabBarItemStyle: isDesktop && isWeb ? { paddingVertical: 8 } : undefined,
       }}

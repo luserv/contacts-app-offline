@@ -285,8 +285,8 @@ export default function HomeScreen() {
         headerTintColor: colors.text,
         headerShadowVisible: false,
         headerRight: () => (
-          <View style={{ flexDirection: 'row', gap: 20, marginRight: 4 }}>
-            <Pressable onPress={handleRefresh} hitSlop={8} accessibilityLabel="Refresh">
+          <View style={{ flexDirection: 'row', gap: 20, marginRight: 12 }}>
+            <Pressable onPress={handleRefresh} hitSlop={8} accessibilityLabel={t.common.refresh}>
               <Ionicons name="refresh" size={20} color={colors.accent} />
             </Pressable>
             <Pressable onPress={() => setFilterModalVisible(true)} hitSlop={8} accessibilityLabel={t.contactList.filters}>
@@ -314,7 +314,7 @@ export default function HomeScreen() {
               returnKeyType="search"
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={10} style={styles.clearBtn}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t.common.clearSearch} onPress={() => setSearchQuery('')} hitSlop={10} style={styles.clearBtn}>
                 <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
               </Pressable>
             )}
@@ -331,7 +331,7 @@ export default function HomeScreen() {
                 </View>
               </React.Fragment>
             ))}
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={15} style={{ padding: 4 }}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t.common.clearSearch} onPress={() => setSearchQuery('')} hitSlop={15} style={{ padding: 4 }}>
               <Ionicons name="close" size={14} color={colors.destructive} />
             </Pressable>
           </View>
@@ -354,7 +354,7 @@ export default function HomeScreen() {
             renderSectionHeader={({ section: { title } }) =>
               title ? (
                 <View style={[styles.sectionHeader, isDesktop && styles.sectionHeaderDesktop, { backgroundColor: colors.bg }]}>
-                  <Text style={styles.sectionHeaderText}>{title}</Text>
+                  <Text style={[styles.sectionHeaderText, { color: colors.textSecondary }]}>{title}</Text>
                 </View>
               ) : null
             }
@@ -377,20 +377,20 @@ export default function HomeScreen() {
                     {`${item.first_name ?? ''} ${item.middle_name ?? ''} ${item.surname ?? ''}`.replace(/\s+/g, ' ').trim()}
                   </Text>
                   {(sortKey === 'age_asc' || sortKey === 'age_desc') && (
-                    <Text style={styles.contactSecondary}>
+                    <Text style={[styles.contactSecondary, { color: colors.textSecondary }]}>
                       {calcularEdad(item.birthdate, t.age) ?? t.contactList.ageNotRecorded}
                     </Text>
                   )}
                   {searchQuery.trim() && (item.achievement || item.organization_name) ? (
                     <>
                       {item.achievement ? (
-                        <Text style={styles.contactSecondaryBlue}>{item.achievement}</Text>
+                        <Text style={[styles.contactSecondaryBlue, { color: colors.accent }]}>{item.achievement}</Text>
                       ) : null}
                       {item.organization_name ? (
-                        <Text style={[styles.contactSecondaryBlue, { fontWeight: '600' }]}>{item.organization_name}</Text>
+                        <Text style={[styles.contactSecondaryBlue, { color: colors.accent }, { fontWeight: '600' }]}>{item.organization_name}</Text>
                       ) : null}
                       {item.organization_date ? (
-                        <Text style={styles.contactSecondaryLight}>
+                        <Text style={[styles.contactSecondaryLight, { color: colors.accent }]}>
                           {item.organization_date}
                           {(() => {
                             if (!item.birthdate) return '';
@@ -412,7 +412,7 @@ export default function HomeScreen() {
             )}
             ListEmptyComponent={() => (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>{t.contacts.empty}</Text>
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t.contacts.empty}</Text>
               </View>
             )}
             contentContainerStyle={[styles.listContent, isDesktop && styles.listContentDesktop]}
@@ -435,7 +435,7 @@ export default function HomeScreen() {
       >
         <Pressable style={[styles.modalOverlay, { backgroundColor: colors.overlay }]} onPress={() => setSortModalVisible(false)}>
           <View style={[styles.actionSheet, { backgroundColor: colors.surface }]}>
-            <Text style={styles.actionSheetTitle}>{t.contactList.sortBy}</Text>
+            <Text style={[styles.actionSheetTitle, { color: colors.textSecondary }]}>{t.contactList.sortBy}</Text>
             {SORT_OPTIONS.map((opt, i) => (
               <React.Fragment key={opt.key}>
                 {i > 0 && <View style={styles.actionSheetSeparator} />}
@@ -443,7 +443,7 @@ export default function HomeScreen() {
                   style={({ pressed }) => [styles.actionSheetItem, pressed && { backgroundColor: '#F2F2F7' }]}
                   onPress={() => { setSortKey(opt.key); setSortModalVisible(false); }}
                 >
-                  <Text style={[styles.actionSheetItemText, { color: colors.text }, sortKey === opt.key && styles.actionSheetItemActive]}>
+                  <Text style={[styles.actionSheetItemText, { color: colors.text }, sortKey === opt.key && styles.actionSheetItemActive, { color: colors.accent }]}>
                     {(t.contactList as any)[opt.transKey]}
                   </Text>
                   {sortKey === opt.key && <Ionicons name="checkmark" size={18} color={colors.accent} />}
@@ -463,9 +463,9 @@ export default function HomeScreen() {
       >
         <Pressable style={[styles.modalOverlay, { backgroundColor: colors.overlay }]} onPress={() => setFilterModalVisible(false)}>
           <View style={[styles.actionSheet, { backgroundColor: colors.surface }]}>
-            <Text style={styles.actionSheetTitle}>{t.contactList.filters}</Text>
+            <Text style={[styles.actionSheetTitle, { color: colors.textSecondary }]}>{t.contactList.filters}</Text>
 
-            <Text style={styles.filterSectionTitle}>{t.contacts.gender}</Text>
+            <Text style={[styles.filterSectionTitle, { color: colors.textSecondary }]}>{t.contacts.gender}</Text>
             <View style={styles.filterChipRow}>
               {genderFilterOptions.map(option => (
                 <Pressable
@@ -480,7 +480,7 @@ export default function HomeScreen() {
               ))}
             </View>
 
-            <Text style={[styles.filterSectionTitle, { marginTop: 12 }]}>{t.contacts.birthdate}</Text>
+            <Text style={[styles.filterSectionTitle, { color: colors.textSecondary }, { marginTop: 12 }]}>{t.contacts.birthdate}</Text>
             <View style={styles.filterChipRow}>
               {([
                 { key: 'all', label: t.contacts.birthdateAll },
@@ -499,7 +499,7 @@ export default function HomeScreen() {
               ))}
             </View>
 
-            <Text style={[styles.filterSectionTitle, { marginTop: 12 }]}>{t.contacts.docFilter}</Text>
+            <Text style={[styles.filterSectionTitle, { color: colors.textSecondary }, { marginTop: 12 }]}>{t.contacts.docFilter}</Text>
             <View style={styles.filterChipRow}>
               {([
                 { key: 'all', label: t.contacts.all },
@@ -518,7 +518,7 @@ export default function HomeScreen() {
               ))}
             </View>
 
-            <Text style={[styles.filterSectionTitle, { marginTop: 12 }]}>{t.contacts.orgFilter}</Text>
+            <Text style={[styles.filterSectionTitle, { color: colors.textSecondary }, { marginTop: 12 }]}>{t.contacts.orgFilter}</Text>
             <View style={styles.filterChipRow}>
               {([
                 { key: 'all', label: t.contacts.all },
@@ -554,7 +554,7 @@ export default function HomeScreen() {
               </View>
             )}
 
-            <Text style={[styles.filterSectionTitle, { marginTop: 12 }]}>{t.contacts.maritalFilter}</Text>
+            <Text style={[styles.filterSectionTitle, { color: colors.textSecondary }, { marginTop: 12 }]}>{t.contacts.maritalFilter}</Text>
             <View style={styles.filterChipRow}>
               {([
                 { key: 'all', label: t.contacts.all },
@@ -611,7 +611,7 @@ export default function HomeScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-              <Text style={styles.fieldLabel}>{t.contacts.firstName} <Text style={styles.required}>{t.common.required}</Text></Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.firstName} <Text style={styles.required}>{t.common.required}</Text></Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
                 placeholder={t.contacts.firstNamePlaceholder}
@@ -620,7 +620,7 @@ export default function HomeScreen() {
                 placeholderTextColor={colors.placeholder}
               />
 
-              <Text style={styles.fieldLabel}>{t.contacts.middleName}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.middleName}</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
                 placeholder={t.contacts.middleNamePlaceholder}
@@ -629,7 +629,7 @@ export default function HomeScreen() {
                 placeholderTextColor={colors.placeholder}
               />
 
-              <Text style={styles.fieldLabel}>{t.contacts.surname} <Text style={styles.required}>{t.common.required}</Text></Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.surname} <Text style={styles.required}>{t.common.required}</Text></Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
                 placeholder={t.contacts.surnamePlaceholder}
@@ -638,7 +638,7 @@ export default function HomeScreen() {
                 placeholderTextColor={colors.placeholder}
               />
 
-              <Text style={styles.fieldLabel}>{t.contacts.gender}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.gender}</Text>
               <View style={styles.genderRow}>
                 {(['MALE', 'FEMALE'] as const).map(g => (
                   <Pressable
@@ -653,7 +653,7 @@ export default function HomeScreen() {
                 ))}
               </View>
 
-              <Text style={styles.fieldLabel}>{t.contacts.birthdate}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.birthdate}</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
                 placeholder={t.contacts.birthdatePlaceholder}
@@ -664,7 +664,7 @@ export default function HomeScreen() {
                 maxLength={10}
               />
 
-              <Text style={styles.fieldLabel}>{t.contacts.maritalStatus}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.maritalStatus}</Text>
               <Dropdown
                 options={maritalStatuses.map(s => ({ label: s.marital_status, value: s.status_id }))}
                 value={selectedStatusId}
@@ -681,14 +681,14 @@ export default function HomeScreen() {
 
               {hasDoc && (
                 <>
-                  <Text style={styles.fieldLabel}>{t.contacts.docType}</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.docType}</Text>
                   <Dropdown
                     options={DOC_TYPES.map((d, i) => ({ label: (t.contactList as any)[DOC_TYPES_KEYS[i]], value: d }))}
                     value={docType}
                     onSelect={v => v && setDocType(v)}
                   />
 
-                  <Text style={styles.fieldLabel}>{t.contacts.docNumber}</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.docNumber}</Text>
                   <TextInput
                     style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
                     placeholder={t.contacts.docNumberPlaceholder}
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
   sectionHeaderText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#6C6C70',
     letterSpacing: 0.5,
   },
 
@@ -827,9 +827,9 @@ const styles = StyleSheet.create({
   contactInfo: { flex: 1, justifyContent: 'center' },
   contactName: { fontSize: 17, color: '#000', letterSpacing: -0.2 },
   contactNameDesktop: { fontSize: 18 },
-  contactSecondary: { fontSize: 13, color: '#8E8E93', marginTop: 1 },
-  contactSecondaryBlue: { fontSize: 13, color: '#007AFF', marginTop: 1 },
-  contactSecondaryLight: { fontSize: 12, color: '#5A9EE0', marginTop: 1 },
+  contactSecondary: { fontSize: 13, color: '#6C6C70', marginTop: 1 },
+  contactSecondaryBlue: { fontSize: 13, color: '#0066D6', marginTop: 1 },
+  contactSecondaryLight: { fontSize: 12, color: '#0066D6', marginTop: 1 },
 
   // List
   loadingOverlay: {
@@ -841,7 +841,7 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: 100 },
   listContentDesktop: { paddingBottom: 120 },
   emptyContainer: { flex: 1, alignItems: 'center', marginTop: 60 },
-  emptyText: { fontSize: 16, color: '#8E8E93' },
+  emptyText: { fontSize: 16, color: '#6C6C70' },
 
   // FAB
   fab: {
@@ -874,7 +874,7 @@ const styles = StyleSheet.create({
   actionSheetTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#6C6C70',
     textAlign: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -894,12 +894,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   actionSheetItemText: { fontSize: 17, color: '#000' },
-  actionSheetItemActive: { color: '#007AFF', fontWeight: '600' },
+  actionSheetItemActive: { color: '#0066D6', fontWeight: '600' },
 
   filterSectionTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#8E8E93',
+    color: '#6C6C70',
     marginTop: 8,
     marginBottom: 8,
     paddingHorizontal: 16,
@@ -914,7 +914,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(60,60,67,0.2)',
     backgroundColor: '#F9F9F9',
   },
-  filterChipActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+  filterChipActive: { backgroundColor: '#0066D6', borderColor: '#0066D6' },
   filterChipText: { fontSize: 13, color: '#555' },
   filterChipTextActive: { color: '#fff', fontWeight: '600' },
   orgPickerWrapper: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
@@ -951,7 +951,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  fieldLabel: { fontSize: 13, fontWeight: '600', color: '#8E8E93', marginTop: 16, marginBottom: 6, letterSpacing: 0.2 },
+  fieldLabel: { fontSize: 13, fontWeight: '600', color: '#6C6C70', marginTop: 16, marginBottom: 6, letterSpacing: 0.2 },
   required: { color: '#FF3B30' },
   input: {
     borderWidth: 0,
@@ -961,7 +961,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: '#000',
     backgroundColor: '#fff',
-    minHeight: 44,
+    minHeight: 48,
   },
 
   docToggle: { flexDirection: 'row', alignItems: 'center', marginTop: 20, gap: 12 },
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#fff',
   },
-  docToggleBoxActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+  docToggleBoxActive: { backgroundColor: '#0066D6', borderColor: '#0066D6' },
   docToggleLabel: { fontSize: 15, color: '#000' },
 
   genderRow: { flexDirection: 'row', gap: 10 },
@@ -983,14 +983,14 @@ const styles = StyleSheet.create({
     flex: 1, paddingVertical: 11, borderRadius: 10,
     alignItems: 'center', backgroundColor: '#fff',
   },
-  genderChipSelected: { backgroundColor: '#007AFF' },
+  genderChipSelected: { backgroundColor: '#0066D6' },
   genderChipText: { fontSize: 15, color: '#333' },
   genderChipTextSelected: { color: '#fff', fontWeight: '600' },
 
   sheetActions: { flexDirection: 'row', gap: 10, marginTop: 24 },
   btn: { flex: 1, paddingVertical: 14, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   btnCancel: { backgroundColor: '#fff' },
-  btnSave: { backgroundColor: '#007AFF' },
+  btnSave: { backgroundColor: '#0066D6' },
   btnCancelText: { fontSize: 16, fontWeight: '600', color: '#000' },
   btnSaveText: { fontSize: 16, fontWeight: '600', color: '#fff' },
 });

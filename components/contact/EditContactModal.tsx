@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     flex: 1, paddingVertical: 10, borderRadius: 10,
     borderWidth: 1, borderColor: '#C7C7CC', alignItems: 'center', backgroundColor: '#F9F9F9',
   },
-  genderChipSelected: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+  genderChipSelected: { backgroundColor: '#0066D6', borderColor: '#0066D6' },
   genderChipText: { fontSize: 15, color: '#333' },
   genderChipTextSelected: { color: '#fff', fontWeight: '600' },
 });

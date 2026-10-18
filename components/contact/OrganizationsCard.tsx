@@ -105,7 +105,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
     <>
       {organizations.length === 0 ? (
         <Pressable style={s.addRow} onPress={openAddModal}>
-          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
           <Text style={s.addRowLabel}>{t.organizations.title}</Text>
         </Pressable>
       ) : (
@@ -130,7 +130,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
                 <Text style={styles.orgName}>{org.organization_name}</Text>
                 {org.achievement ? <Text style={styles.orgAchievement}>{org.achievement}</Text> : null}
                 {org.date ? (
-                  <Text style={styles.orgDate}>
+                  <Text style={[styles.orgDate, { color: colors.textSecondary }]}>
                     {org.date}
                     {(() => {
                       if (!birthdate) return '';
@@ -146,7 +146,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
                 ) : null}
               </View>
               <Pressable onPress={() => openEditModal(org)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
-                <Text style={styles.editBtnText}>{t.common.edit}</Text>
+                <Text style={[styles.editBtnText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemove(org)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
@@ -174,7 +174,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
                 <View style={styles.suggestions}>
                   {suggestions.map((sg, i) => (
                     <Pressable key={`${i}-${sg}`} style={styles.suggestionRow} onPress={() => { setOrgName(sg); setSuggestions([]); }}>
-                      <Text style={styles.suggestionText}>{sg}</Text>
+                      <Text style={[styles.suggestionText, { color: colors.accent }]}>{sg}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -189,7 +189,7 @@ export default function OrganizationsCard({ contactId, birthdate, initialOrganiz
                 <View style={styles.suggestions}>
                   {achievementSuggestions.map((sg, i) => (
                     <Pressable key={`${i}-${sg}`} style={styles.suggestionRow} onPress={() => { setAchievement(sg); setAchievementSuggestions([]); }}>
-                      <Text style={styles.suggestionText}>{sg}</Text>
+                      <Text style={[styles.suggestionText, { color: colors.accent }]}>{sg}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -228,9 +228,9 @@ const styles = StyleSheet.create({
   orgInfo: { flex: 1 },
   orgName: { fontSize: 16, fontWeight: '600', color: '#000' },
   orgAchievement: { fontSize: 14, color: '#333', marginTop: 2 },
-  orgDate: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-  editBtn: { paddingHorizontal: 8, paddingVertical: 8, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  editBtnText: { fontSize: 14, color: '#007AFF' },
+  orgDate: { fontSize: 12, color: '#6C6C70', marginTop: 2 },
+  editBtn: { paddingHorizontal: 8, paddingVertical: 8, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  editBtnText: { fontSize: 14, color: '#0066D6' },
   suggestions: {
     borderWidth: 1, borderColor: '#E5E5EA', borderRadius: 8,
     backgroundColor: '#fff', marginTop: 4, marginBottom: 4,
@@ -239,5 +239,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#F2F2F7',
   },
-  suggestionText: { fontSize: 15, color: '#007AFF' },
+  suggestionText: { fontSize: 15, color: '#0066D6' },
 });

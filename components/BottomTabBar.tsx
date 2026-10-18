@@ -17,15 +17,15 @@ export default function BottomTabBar() {
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom, backgroundColor: colors.surface, borderTopColor: colors.separator }]}>
-      <Pressable style={styles.tab} onPress={() => router.push('/(tabs)')}>
+      <Pressable accessibilityRole="tab" style={styles.tab} onPress={() => router.push('/(tabs)')}>
         <Ionicons name="person-circle-outline" size={24} color={colors.accent} />
         <Text style={[styles.label, { color: colors.accent }]}>{t.tabs.contacts}</Text>
       </Pressable>
-      <Pressable style={styles.tab} onPress={() => router.push('/(tabs)/calendar')}>
+      <Pressable accessibilityRole="tab" style={styles.tab} onPress={() => router.push('/(tabs)/calendar')}>
         <Ionicons name="calendar-outline" size={24} color={colors.accent} />
         <Text style={[styles.label, { color: colors.accent }]}>{t.tabs.calendar}</Text>
       </Pressable>
-      <Pressable style={styles.tab} onPress={() => router.push('/(tabs)/menu')}>
+      <Pressable accessibilityRole="tab" style={styles.tab} onPress={() => router.push('/(tabs)/menu')}>
         <Ionicons name="ellipsis-horizontal-circle-outline" size={24} color={colors.accent} />
         <Text style={[styles.label, { color: colors.accent }]}>{t.tabs.menu}</Text>
       </Pressable>
@@ -43,6 +43,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   label: {
-    fontSize: 10, marginTop: 3,
+    fontSize: 11, marginTop: 3,
   },
 });

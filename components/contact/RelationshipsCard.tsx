@@ -79,7 +79,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
     <>
       {relationships.length === 0 ? (
         <Pressable style={s.addRow} onPress={openModal}>
-          <View style={s.addRowIcon}><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
           <Text style={s.addRowLabel}>{t.relationships.title}</Text>
         </Pressable>
       ) : (
@@ -99,7 +99,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
               </Pressable>
               <Pressable style={styles.relInfo} onPress={() => onNavigate(rel.related_contact_id)}>
                 <Text style={styles.relName}>{rel.first_name} {rel.surname}</Text>
-                <Text style={styles.relType}>{rel.label}</Text>
+                <Text style={[styles.relType, { color: colors.textSecondary }]}>{rel.label}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemove(rel)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
@@ -125,7 +125,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
                       style={[styles.optionRow, selectedTypeId === item.type_id && styles.optionRowSelected]}
                       onPress={() => setSelectedTypeId(item.type_id)}
                     >
-                      <Text style={[styles.optionText, selectedTypeId === item.type_id && styles.optionTextSelected]}>
+                      <Text style={[styles.optionText, selectedTypeId === item.type_id && styles.optionTextSelected, { color: colors.accent }]}>
                         {item.label}
                       </Text>
                     </Pressable>
@@ -167,7 +167,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
                           {item.first_name?.[0]?.toUpperCase()}{item.surname?.[0]?.toUpperCase()}
                         </Text>
                       </View>
-                      <Text style={[styles.optionText, selectedContactId === item.contact_id && styles.optionTextSelected]}>
+                      <Text style={[styles.optionText, selectedContactId === item.contact_id && styles.optionTextSelected, { color: colors.accent }]}>
                         {item.first_name} {item.surname}
                       </Text>
                     </Pressable>
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   relAvatarText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   relInfo: { flex: 1 },
   relName: { fontSize: 16, color: '#000', fontWeight: '500' },
-  relType: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
+  relType: { fontSize: 13, color: '#6C6C70', marginTop: 2 },
   relAvatarSmall: {
     width: 34, height: 34, borderRadius: 17,
     backgroundColor: '#5AC8FA', alignItems: 'center', justifyContent: 'center',
@@ -224,5 +224,5 @@ const styles = StyleSheet.create({
   },
   optionRowSelected: { backgroundColor: '#E5F0FF' },
   optionText: { fontSize: 16, color: '#000', marginLeft: 8 },
-  optionTextSelected: { color: '#007AFF', fontWeight: '600' },
+  optionTextSelected: { color: '#0066D6', fontWeight: '600' },
 });
