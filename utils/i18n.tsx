@@ -145,8 +145,8 @@ const translations = {
     },
     detail: {
       details: 'Detalles',
-      firstNameLabel: 'NOMBRES',
-      surnameLabel: 'APELLIDOS',
+      firstNameLabel: 'NOMBRE',
+      surnameLabel: 'APELLIDO',
       dobLabel: 'FECHA DE NACIMIENTO',
       maritalLabel: 'ESTADO CIVIL',
       genderLabel: 'GÉNERO',
@@ -558,8 +558,8 @@ const translations = {
     },
     detail: {
       details: 'Details',
-      firstNameLabel: 'FIRST NAME(S)',
-      surnameLabel: 'SURNAME(S)',
+      firstNameLabel: 'FIRST NAME',
+      surnameLabel: 'SURNAME',
       dobLabel: 'BIRTHDAY',
       maritalLabel: 'MARITAL STATUS',
       genderLabel: 'GENDER',
