@@ -19,15 +19,15 @@ export default function BottomTabBar() {
     <View style={[styles.container, { paddingBottom: insets.bottom, backgroundColor: colors.surface, borderTopColor: colors.separator }]}>
       <Pressable accessibilityRole="tab" style={styles.tab} onPress={() => router.push('/(tabs)')}>
         <Ionicons name="person-circle-outline" size={24} color={colors.accent} />
-        <Text style={[styles.label, { color: colors.accent }]}>{t.tabs.contacts}</Text>
+        <Text maxFontSizeMultiplier={1.2} style={[styles.label, { color: colors.accent }]}>{t.tabs.contacts}</Text>
       </Pressable>
       <Pressable accessibilityRole="tab" style={styles.tab} onPress={() => router.push('/(tabs)/calendar')}>
         <Ionicons name="calendar-outline" size={24} color={colors.accent} />
-        <Text style={[styles.label, { color: colors.accent }]}>{t.tabs.calendar}</Text>
+        <Text maxFontSizeMultiplier={1.2} style={[styles.label, { color: colors.accent }]}>{t.tabs.calendar}</Text>
       </Pressable>
       <Pressable accessibilityRole="tab" style={styles.tab} onPress={() => router.push('/(tabs)/menu')}>
         <Ionicons name="ellipsis-horizontal-circle-outline" size={24} color={colors.accent} />
-        <Text style={[styles.label, { color: colors.accent }]}>{t.tabs.menu}</Text>
+        <Text maxFontSizeMultiplier={1.2} style={[styles.label, { color: colors.accent }]}>{t.tabs.menu}</Text>
       </Pressable>
     </View>
   );

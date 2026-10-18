@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from 'react';
-import { ActivityIndicator, StatusBar, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, StatusBar, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../utils/authContext';
 import { ContactsProvider } from '../utils/context';
 import { I18nProvider, useI18n } from '../utils/i18n';
@@ -39,9 +40,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 function ThemedApp() {
   const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  // Edge-to-edge on Android: in landscape the navigation bar sits at the side and would cover content.
+  const sidePadding = Platform.OS === 'android' ? { paddingLeft: insets.left, paddingRight: insets.right } : null;
   return (
     <ContactsProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={[{ flex: 1 }, sidePadding]}>
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
         <AuthGate>
           <Stack>

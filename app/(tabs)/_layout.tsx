@@ -18,6 +18,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         tabBarPosition: isDesktop && isWeb ? 'top' : 'bottom',
+        // Bar height is fixed; letting labels follow the system font scale clips them.
+        tabBarAllowFontScaling: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: isDesktop && isWeb ? {
