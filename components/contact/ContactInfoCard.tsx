@@ -5,13 +5,10 @@ import { ContactEmail, ContactPhone, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
 import { useTheme } from '../../utils/theme';
+import { telHref, whatsappNumber } from '../../utils/phoneLinks';
 
 function normalizePhone(phone: string): string {
   return phone.replace(/[^\d+]/g, '');
-}
-
-function normalizeDigitsOnly(phone: string): string {
-  return phone.replace(/\D/g, '');
 }
 
 type PhoneActionItem = {
@@ -36,11 +33,14 @@ function getAppChecks(): Promise<boolean[]> {
 
 async function resolvePhoneActions(phone: string, labels: { callPhone: string; sendSms: string; whatsapp: string; whatsappBusiness: string; telegram: string; signal: string }): Promise<PhoneActionItem[]> {
   const normalized = normalizePhone(phone);
-  const digitsOnly = normalizeDigitsOnly(phone);
+  // International digits (adds the default country code to local numbers); empty when unusable.
+  const digitsOnly = whatsappNumber(phone);
 
-  const actions: PhoneActionItem[] = [
-    { key: 'sms', label: labels.sendSms, color: '#34C759', url: `sms:${normalized}` },
-  ];
+  const actions: PhoneActionItem[] = [];
+  const call = telHref(phone);
+  if (call) actions.push({ key: 'call', label: labels.callPhone, color: '#007AFF', url: call });
+  actions.push({ key: 'sms', label: labels.sendSms, color: '#34C759', url: `sms:${normalized}` });
+  if (!digitsOnly) return actions;
 
   const messagingApps = [
     {
@@ -288,20 +288,11 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
         <Pressable style={s.modalOverlay} onPress={() => setActionsSheet(null)}>
           <Pressable style={[styles.actionsContainer, { backgroundColor: colors.bg }]}>
             <Text style={[styles.actionsTitle, { color: colors.textSecondary }]}>{actionsSheet?.phone}</Text>
-            <Pressable
-              style={[styles.actionRow, { backgroundColor: colors.surface }, styles.actionRowBorder]}
-              onPress={async () => {
-                await copyToClipboard(actionsSheet?.phone ?? '');
-                setActionsSheet(null);
-                Alert.alert(t.contactInfo.phoneActions.copied);
-              }}
-            >
-              <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>{t.contactInfo.phoneActions.copyToClipboard}</Text>
-            </Pressable>
-            {actionsSheet?.actions.map((action, i) => (
+            {actionsSheet?.actions.map((action) => (
               <Pressable
                 key={action.key}
-                style={[styles.actionRow, { backgroundColor: colors.surface }, i < (actionsSheet.actions.length - 1) && styles.actionRowBorder]}
+                style={[styles.actionRow, { backgroundColor: colors.surface }, styles.actionRowBorder]}
+                accessibilityRole="button"
                 onPress={() => {
                   setActionsSheet(null);
                   Linking.openURL(action.url).catch(() =>
@@ -309,9 +300,23 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
                   );
                 }}
               >
-                <Text style={[styles.actionLabel, { color: action.color }]}>{action.label}</Text>
+                <View style={styles.actionContent}>
+                  <View style={[styles.actionDot, { backgroundColor: action.color }]} />
+                  <Text style={[styles.actionLabel, { color: colors.text }]}>{action.label}</Text>
+                </View>
               </Pressable>
             ))}
+            <Pressable
+              accessibilityRole="button"
+              style={[styles.actionRow, { backgroundColor: colors.surface }]}
+              onPress={async () => {
+                await copyToClipboard(actionsSheet?.phone ?? '');
+                setActionsSheet(null);
+                Alert.alert(t.contactInfo.phoneActions.copied);
+              }}
+            >
+              <Text style={[styles.actionLabel, { color: colors.text }]}>{t.contactInfo.phoneActions.copyToClipboard}</Text>
+            </Pressable>
             <View style={[styles.actionsDivider, { backgroundColor: colors.bg }]} />
             <Pressable style={[styles.actionRow, { backgroundColor: colors.surface }]} onPress={() => setActionsSheet(null)}>
               <Text style={[styles.actionCancel, { color: colors.accent }]}>{t.common.cancel}</Text>
@@ -436,6 +441,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#C6C6C8',
   },
   actionLabel: { fontSize: 17 },
+  actionContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  actionDot: { width: 10, height: 10, borderRadius: 5 },
   actionsDivider: { height: 8, backgroundColor: '#F2F2F7' },
   actionCancel: { fontSize: 17, fontWeight: '600', color: '#0066D6' },
   phoneHint: { fontSize: 12, color: '#6C6C70', marginTop: 4, marginBottom: 12, lineHeight: 16 },
