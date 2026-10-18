@@ -1,6 +1,6 @@
 import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import BottomTabBar from '../../components/BottomTabBar';
 import BankAccountCard from '../../components/contact/BankAccountCard';
 import ContactInfoCard from '../../components/contact/ContactInfoCard';
@@ -59,7 +59,7 @@ export default function ContactDetailScreen() {
       }
     };
     const name = `${contact?.first_name ?? ''} ${contact?.surname ?? ''}`.trim();
-    if (typeof window !== 'undefined' && !(window as any).ReactNativeWebView) {
+    if (Platform.OS === 'web') {
       if (confirm(t.contact.deleteConfirm(name))) doDelete();
     } else {
       Alert.alert(
