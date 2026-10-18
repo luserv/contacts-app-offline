@@ -605,7 +605,7 @@ export default function HomeScreen() {
           style={{ flex: 1 }}
         >
         <View style={[styles.sheetOverlay, { backgroundColor: colors.overlay }]}>
-          <View style={[styles.sheet, { backgroundColor: colors.bg }, isDesktop && styles.sheetDesktop, { backgroundColor: colors.bg }]}>
+          <View style={[styles.sheet, { backgroundColor: colors.bg }, isDesktop ? styles.sheetDesktop : { paddingBottom: 20 + insets.bottom }]}>
             <View style={styles.sheetHandle} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>{t.contacts.newContact}</Text>
 

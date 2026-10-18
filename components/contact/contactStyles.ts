@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { useResponsive } from '../../utils/responsive';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../utils/theme';
 
 export function useSharedStyles() {
   const { isDesktop, isTablet } = useResponsive();
   const { colors: c } = useTheme();
+  const insets = useSafeAreaInsets();
   return useMemo(() => ({
     card: {
       backgroundColor: c.surface,
@@ -95,6 +97,8 @@ export function useSharedStyles() {
       borderTopRightRadius: 12,
       borderRadius: (isDesktop || isTablet) ? 14 : undefined,
       padding: isDesktop ? 24 : isTablet ? 22 : 20,
+      // Bottom sheets on phones sit above the system navigation bar (edge-to-edge).
+      paddingBottom: (isDesktop ? 24 : isTablet ? 22 : 20) + (isDesktop || isTablet ? 0 : insets.bottom),
       maxHeight: '85%' as const,
       maxWidth: isDesktop ? 600 : isTablet ? 540 : undefined,
       alignSelf: (isDesktop || isTablet) ? ('center' as const) : undefined,
@@ -138,5 +142,5 @@ export function useSharedStyles() {
     },
     btnSaveText: { fontSize: 16, fontWeight: '600' as const, color: '#FFFFFF' },
     btnDisabled: { backgroundColor: c.textTertiary },
-  }), [isDesktop, isTablet, c]);
+  }), [isDesktop, isTablet, c, insets.bottom]);
 }

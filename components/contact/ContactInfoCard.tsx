@@ -4,6 +4,7 @@ import { Alert, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, Scrol
 import { ContactEmail, ContactPhone, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../utils/theme';
 import { telHref, whatsappNumber } from '../../utils/phoneLinks';
 
@@ -100,6 +101,7 @@ interface Props {
 export default function ContactInfoCard({ contactId, initialPhones, initialEmails }: Props) {
   const s = useSharedStyles();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const { getContactPhones, addContactPhone, updateContactPhone, removeContactPhone, getContactEmails, addContactEmail, updateContactEmail, removeContactEmail } = useContacts();
 
@@ -286,7 +288,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
       {/* Phone actions sheet */}
       <Modal visible={!!actionsSheet} animationType="slide" transparent onRequestClose={() => setActionsSheet(null)}>
         <Pressable style={s.modalOverlay} onPress={() => setActionsSheet(null)}>
-          <Pressable style={[styles.actionsContainer, { backgroundColor: colors.bg }]}>
+          <Pressable style={[styles.actionsContainer, { backgroundColor: colors.bg, paddingBottom: 8 + insets.bottom }]}>
             <Text style={[styles.actionsTitle, { color: colors.textSecondary }]}>{actionsSheet?.phone}</Text>
             {actionsSheet?.actions.map((action) => (
               <Pressable

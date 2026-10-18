@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResponsive } from '../utils/responsive';
 import { useTheme } from '../utils/theme';
 import { useI18n } from '../utils/i18n';
@@ -37,6 +38,7 @@ export default function Dropdown({
   const [open, setOpen] = useState(false);
   const { t } = useI18n();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { isDesktop, isTablet } = useResponsive();
   const ph = placeholder ?? t.common.select;
   const nl = nullLabel ?? t.common.unspecified;
@@ -71,7 +73,7 @@ export default function Dropdown({
         onRequestClose={() => setOpen(false)}
       >
         <Pressable style={[styles.overlay, (isDesktop || isTablet) && styles.overlayCentered, { backgroundColor: colors.overlay }]} onPress={() => setOpen(false)}>
-          <View style={[styles.sheet, (isDesktop || isTablet) && styles.sheetCentered, { backgroundColor: colors.surface }]} accessibilityViewIsModal={true}>
+          <View style={[styles.sheet, (isDesktop || isTablet) ? styles.sheetCentered : { paddingBottom: 32 + insets.bottom }, { backgroundColor: colors.surface }]} accessibilityViewIsModal={true}>
             <View style={[styles.handle, { backgroundColor: colors.separator }]} />
 
             <FlatList

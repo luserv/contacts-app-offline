@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { displayName, MONTH_NAMES_EN, MONTH_NAMES_ES, parseBirthdate } from '../../utils/contactUtils';
 import { useContacts } from '../../utils/context';
 import { type T, useI18n } from '../../utils/i18n';
@@ -33,6 +34,7 @@ export default function CalendarScreen() {
   const router = useRouter();
   const { width, isDesktop, isTablet, r } = useResponsive();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -191,7 +193,7 @@ export default function CalendarScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <Pressable style={[styles.overlay, (isDesktop || isTablet) && styles.overlayCentered, { backgroundColor: colors.overlay }]} onPress={() => setModalVisible(false)}>
-          <Pressable style={[styles.sheet, (isDesktop || isTablet) && styles.sheetCentered, { backgroundColor: colors.surface }]} onPress={e => e.stopPropagation()}>
+          <Pressable style={[styles.sheet, (isDesktop || isTablet) ? styles.sheetCentered : { paddingBottom: 32 + insets.bottom }, { backgroundColor: colors.surface }]} onPress={e => e.stopPropagation()}>
             <View style={[styles.sheetHandle, { backgroundColor: colors.separator }]} />
             <View style={[styles.sheetHeader, { borderBottomColor: colors.separatorFine }]}>
               <Text style={[styles.sheetTitle, { color: colors.text }]}>
