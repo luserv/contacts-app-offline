@@ -5,6 +5,7 @@ export default {
     version: "1.0.0",
     scheme: "contacts",
     orientation: "default",
+    userInterfaceStyle: "automatic",
     platforms: ["android", "web"],
     icon: "./assets/images/icon.png",
     splash: {
