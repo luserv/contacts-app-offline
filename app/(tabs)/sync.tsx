@@ -329,7 +329,7 @@ export default function SyncScreen() {
         </Pressable>
 
         <Pressable
-          style={[styles.button, styles.buttonImport, !!loadingOp && styles.buttonDisabled]}
+          style={[styles.button, styles.buttonImport, { backgroundColor: colors.successSolid }, !!loadingOp && styles.buttonDisabled]}
           onPress={handleImport}
           disabled={!!loadingOp}
         >
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   },
   buttonVcf: { backgroundColor: '#5856D6' },
   buttonExport: { backgroundColor: '#0066D6' },
-  buttonImport: { backgroundColor: '#34C759' },
+  buttonImport: { backgroundColor: '#1F7A36' },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   buttonDrive: { backgroundColor: '#1a73e8' },

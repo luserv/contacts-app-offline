@@ -198,7 +198,7 @@ export default function NotificationsScreen() {
           />
         </View>
         {activeCount !== null && (
-          <Text style={[styles.activeCount, { color: colors.success }]}>{t.notificationsScreen.activeCount(activeCount)}</Text>
+          <Text style={[styles.activeCount, { color: colors.successText }]}>{t.notificationsScreen.activeCount(activeCount)}</Text>
         )}
       </View>
 
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   cardDesc: { fontSize: 13, color: '#6C6C70', marginBottom: 12, lineHeight: 18 },
 
   toggleRow: { flexDirection: 'row', alignItems: 'center' },
-  activeCount: { fontSize: 13, color: '#34C759', marginTop: 8, fontWeight: '500' },
+  activeCount: { fontSize: 13, color: '#1F7A36', marginTop: 8, fontWeight: '500' },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
