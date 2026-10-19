@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type Lang = 'es' | 'en';
@@ -46,7 +47,7 @@ const translations = {
       cancel: 'Cancelar',
       delete: 'Eliminar',
       edit: 'Editar',
-      add: '+ Agregar',
+      add: 'Agregar',
       back: 'Atrás',
       next: 'Siguiente',
       error: 'Error',
@@ -465,7 +466,7 @@ const translations = {
       cancel: 'Cancel',
       delete: 'Delete',
       edit: 'Edit',
-      add: '+ Add',
+      add: 'Add',
       back: 'Back',
       next: 'Next',
       error: 'Error',

@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactUrl, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import AddButtonLabel from './AddButtonLabel';
 import { useTheme } from '../../utils/theme';
 
 interface Props {
@@ -52,7 +54,7 @@ export default function UrlsCard({ contactId, initialUrls }: Props) {
     <>
       {urls.length === 0 ? (
         <Pressable style={s.addRow} onPress={openAdd}>
-          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Ionicons name="add" size={18} color={colors.accent} /></View>
           <Text style={s.addRowLabel}>{t.urls.title}</Text>
         </Pressable>
       ) : (
@@ -60,7 +62,7 @@ export default function UrlsCard({ contactId, initialUrls }: Props) {
           <View style={s.cardHeader}>
             <Text style={s.cardTitle}>{t.urls.title}</Text>
             <Pressable style={s.addButton} onPress={openAdd} accessibilityLabel={t.urls.addTitle}>
-              <Text style={s.addButtonText}>{t.common.add}</Text>
+              <AddButtonLabel />
             </Pressable>
           </View>
           {urls.map((item, i) => (
@@ -72,7 +74,7 @@ export default function UrlsCard({ contactId, initialUrls }: Props) {
                 </Pressable>
               </View>
               <Pressable onPress={() => handleRemove(item)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
-                <Text style={s.removeBtnText}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.destructive} />
               </Pressable>
             </View>
           ))}

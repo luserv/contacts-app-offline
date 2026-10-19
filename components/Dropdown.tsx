@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   FlatList,
@@ -63,7 +64,7 @@ export default function Dropdown({
         <Text style={[styles.triggerText, { color: selectedLabel ? colors.text : colors.placeholder }]}>
           {selectedLabel ?? (allowNull ? nl : ph)}
         </Text>
-        <Text style={[styles.arrow, { color: colors.textSecondary }]}>▼</Text>
+        <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
       </Pressable>
 
       <Modal
@@ -93,7 +94,7 @@ export default function Dropdown({
                     <Text style={[styles.optionText, { color: colors.text }, isSelected && { color: colors.accent, fontWeight: '600' }]}>
                       {item.label}
                     </Text>
-                    {isSelected && <Text style={[styles.checkmark, { color: colors.accent }]}>✓</Text>}
+                    {isSelected && <Ionicons name="checkmark" size={20} color={colors.accent} />}
                   </Pressable>
                 );
               }}
@@ -117,7 +118,6 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   triggerText: { fontSize: 16 },
-  arrow: { fontSize: 11 },
 
   overlay: {
     flex: 1,
@@ -160,5 +160,4 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   optionText: { fontSize: 16 },
-  checkmark: { fontSize: 16 },
 });

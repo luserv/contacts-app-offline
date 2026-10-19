@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactKeyword, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import AddButtonLabel from './AddButtonLabel';
 import { useTheme } from '../../utils/theme';
 
 interface Props {
@@ -57,7 +59,7 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
   if (keywords.length === 0 && !adding) {
     return (
       <Pressable style={s.addRow} onPress={openInput}>
-        <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
+        <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Ionicons name="add" size={18} color={colors.accent} /></View>
         <Text style={s.addRowLabel}>{t.keywords.title}</Text>
       </Pressable>
     );
@@ -69,7 +71,7 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
         <Text style={s.cardTitle}>{t.keywords.title}</Text>
         {!adding && (
           <Pressable style={s.addButton} onPress={openInput} accessibilityLabel={t.keywords.title}>
-            <Text style={s.addButtonText}>{t.common.add}</Text>
+            <AddButtonLabel />
           </Pressable>
         )}
       </View>
@@ -79,7 +81,7 @@ export default function KeywordsCard({ contactId, initialKeywords }: Props) {
           <Pressable key={kw.id} style={[styles.chip, { backgroundColor: colors.accentSubtle }]} onLongPress={() => handleRemove(kw)}>
             <Text style={[styles.chipText, { color: colors.accent }]}>{kw.keyword}</Text>
             <Pressable onPress={() => handleRemove(kw)} hitSlop={6} accessibilityLabel={t.common.delete}>
-              <Text style={[styles.chipRemove, { color: colors.accent }]}>✕</Text>
+              <Ionicons name="close" size={14} color={colors.accent} />
             </Pressable>
           </Pressable>
         ))}
@@ -115,7 +117,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 6,
   },
   chipText: { fontSize: 14, color: '#0066D6', fontWeight: '500' },
-  chipRemove: { fontSize: 11, color: '#0066D6', fontWeight: '700' },
   inputChip: {
     backgroundColor: '#F2F2F7', borderRadius: 20,
     paddingHorizontal: 12, paddingVertical: 6,

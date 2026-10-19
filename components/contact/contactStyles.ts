@@ -49,7 +49,6 @@ export function useSharedStyles() {
       alignItems: 'center' as const,
       justifyContent: 'center' as const,
     },
-    addRowIconText: { color: c.accent, fontSize: 17, lineHeight: 22 },
     addRowLabel: { color: c.accent, fontSize: 15, fontWeight: '500' as const },
     cardHeader: {
       flexDirection: 'row' as const,
@@ -80,7 +79,6 @@ export function useSharedStyles() {
       alignItems: 'center' as const,
       justifyContent: 'center' as const,
     },
-    removeBtnText: { color: c.destructive, fontSize: 16 },
     cardRow: {
       flexDirection: 'row' as const,
       flexWrap: (isDesktop || isTablet) ? 'wrap' as const : 'nowrap' as const,

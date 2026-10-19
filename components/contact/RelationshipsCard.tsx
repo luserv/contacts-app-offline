@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Relationship, RelationshipType, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import AddButtonLabel from './AddButtonLabel';
 import { listLabel } from '../../utils/listLabels';
 import { useTheme } from '../../utils/theme';
 
@@ -80,7 +82,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
     <>
       {relationships.length === 0 ? (
         <Pressable style={s.addRow} onPress={openModal}>
-          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Ionicons name="add" size={18} color={colors.accent} /></View>
           <Text style={s.addRowLabel}>{t.relationships.title}</Text>
         </Pressable>
       ) : (
@@ -88,7 +90,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
         <View style={s.cardHeader}>
           <Text style={s.cardTitle}>{t.relationships.title}</Text>
           <Pressable style={s.addButton} onPress={openModal} accessibilityLabel={t.relationships.title}>
-            <Text style={s.addButtonText}>{t.common.add}</Text>
+            <AddButtonLabel />
           </Pressable>
         </View>
         {relationships.map(rel => (
@@ -103,7 +105,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
                 <Text style={[styles.relType, { color: colors.textSecondary }]}>{listLabel('relationship', lang, rel.type_id, rel.label)}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemove(rel)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
-                <Text style={s.removeBtnText}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.destructive} />
               </Pressable>
             </View>
           ))

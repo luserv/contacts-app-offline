@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactBankAccount, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import AddButtonLabel from './AddButtonLabel';
 import { useTheme } from '../../utils/theme';
 
 interface Props {
@@ -108,7 +110,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
     <>
       {accounts.length === 0 ? (
         <Pressable style={s.addRow} onPress={openAddModal}>
-          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Ionicons name="add" size={18} color={colors.accent} /></View>
           <Text style={s.addRowLabel}>{t.bankAccounts.title}</Text>
         </Pressable>
       ) : (
@@ -116,7 +118,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
           <View style={s.cardHeader}>
             <Text style={s.cardTitle}>{t.bankAccounts.title}</Text>
             <Pressable style={s.addButton} onPress={openAddModal} accessibilityLabel={t.bankAccounts.addTitle}>
-              <Text style={s.addButtonText}>{t.common.add}</Text>
+              <AddButtonLabel />
             </Pressable>
           </View>
           {accounts.map(acc => (
@@ -131,7 +133,7 @@ export default function BankAccountCard({ contactId, initialAccounts }: Props) {
                 <Text style={[styles.editBtnText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemove(acc)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
-                <Text style={s.removeBtnText}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.destructive} />
               </Pressable>
             </View>
           ))}

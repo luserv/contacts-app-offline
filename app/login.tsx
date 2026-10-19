@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 // Web / Electron: usa Firebase signInWithPopup directamente
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -42,7 +43,7 @@ export default function LoginScreen() {
     <View style={[styles.container, { backgroundColor: colors.accent }]}>
       <View style={[styles.card, { backgroundColor: colors.surface, shadowOpacity: colors.shadowOpacityMedium }]}>
         <View style={[styles.iconPlaceholder, { backgroundColor: colors.accentSubtle }]}>
-          <Text style={styles.iconText}>👥</Text>
+          <Ionicons name="people" size={44} color="#0066D6" />
         </View>
         <Text style={[styles.title, { color: colors.text }]}>{t.login.title}</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t.login.subtitle}</Text>
@@ -72,7 +73,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15, shadowRadius: 12, elevation: 8,
   },
   iconPlaceholder: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#E5F0FF', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  iconText: { fontSize: 40 },
   title: { fontSize: 28, fontWeight: '700', color: '#000', marginBottom: 8 },
   subtitle: { fontSize: 15, color: '#6C6C70', textAlign: 'center', marginBottom: 32 },
   googleBtn: { backgroundColor: '#0066D6', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 24, width: '100%', alignItems: 'center', marginBottom: 6 },

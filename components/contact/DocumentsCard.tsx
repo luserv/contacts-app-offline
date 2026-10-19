@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { copyToClipboard } from '../../utils/clipboard';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -7,6 +8,7 @@ import { useI18n } from '../../utils/i18n';
 import { DOC_TYPES_KEYS } from '../../utils/contactList';
 import { DOC_TYPES, DOCS_WITH_DATES, formatDate } from '../../utils/contactUtils';
 import { useSharedStyles } from './contactStyles';
+import AddButtonLabel from './AddButtonLabel';
 import { useTheme } from '../../utils/theme';
 
 interface Props {
@@ -82,7 +84,7 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
     <>
       {cards.length === 0 ? (
         <Pressable style={s.addRow} onPress={openAddModal}>
-          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
+          <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Ionicons name="add" size={18} color={colors.accent} /></View>
           <Text style={s.addRowLabel}>{t.documents.title}</Text>
         </Pressable>
       ) : (
@@ -90,7 +92,7 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
           <View style={s.cardHeader}>
             <Text style={s.cardTitle}>{t.documents.title}</Text>
             <Pressable style={s.addButton} onPress={openAddModal} accessibilityLabel={t.documents.addTitle}>
-              <Text style={s.addButtonText}>{t.common.add}</Text>
+              <AddButtonLabel />
             </Pressable>
           </View>
           {cards.map(doc => (
@@ -110,13 +112,13 @@ export default function DocumentsCard({ contactId, initialCards }: Props) {
                   Alert.alert(t.contactInfo.phoneActions.copied);
                 }}
               >
-                <Text style={[styles.editBtnText, { color: colors.accent }]}>📋</Text>
+                <Ionicons name="copy-outline" size={20} color={colors.accent} />
               </Pressable>
               <Pressable onPress={() => openEditModal(doc)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
                 <Text style={[styles.editBtnText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemove(doc)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
-                <Text style={s.removeBtnText}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.destructive} />
               </Pressable>
             </View>
           ))}

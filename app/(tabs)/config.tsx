@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -68,12 +69,7 @@ export default function Config() {
     try {
       setRestoring(true);
       const ok = await rcRestore();
-      Alert.alert(
-        ok ? '✅' : 'ℹ️',
-        ok
-          ? t.config.licenseRestored
-          : t.config.noPreviousPurchases
-      );
+      Alert.alert(ok ? t.config.licenseRestored : t.config.noPreviousPurchases);
     } catch (e: any) {
       Alert.alert(t.common.error, e?.message ?? t.config.unknownError);
     } finally {

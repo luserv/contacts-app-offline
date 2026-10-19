@@ -1,9 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { copyToClipboard } from '../../utils/clipboard';
 import React, { useCallback, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ContactEmail, ContactPhone, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import AddButtonLabel from './AddButtonLabel';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../utils/theme';
 import { isValidEmail, isValidPhone } from '../../utils/contactValidation';
@@ -221,14 +223,14 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
           <Text style={s.cardTitle}>{t.contactInfo.phones}</Text>
           {phones.length > 0 && (
             <Pressable style={s.addButton} onPress={openAddPhoneModal} accessibilityLabel={t.contactInfo.addPhone}>
-              <Text style={s.addButtonText}>{t.common.add}</Text>
+              <AddButtonLabel />
             </Pressable>
           )}
         </View>
 
         {phones.length === 0 ? (
           <Pressable style={s.addRowInline} onPress={openAddPhoneModal}>
-            <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
+            <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Ionicons name="add" size={18} color={colors.accent} /></View>
             <Text style={s.addRowLabel}>{t.contactInfo.addPhone}</Text>
           </Pressable>
         ) : (
@@ -242,7 +244,7 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
                 <Text style={[styles.editBtnText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemovePhone(p)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
-                <Text style={s.removeBtnText}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.destructive} />
               </Pressable>
             </View>
           ))
@@ -256,14 +258,14 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
           <Text style={s.cardTitle}>{t.contactInfo.emails}</Text>
           {emails.length > 0 && (
             <Pressable style={s.addButton} onPress={openAddEmailModal} accessibilityLabel={t.contactInfo.addEmail}>
-              <Text style={s.addButtonText}>{t.common.add}</Text>
+              <AddButtonLabel />
             </Pressable>
           )}
         </View>
 
         {emails.length === 0 ? (
           <Pressable style={s.addRowInline} onPress={openAddEmailModal}>
-            <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Text style={s.addRowIconText}>+</Text></View>
+            <View style={s.addRowIcon} accessible={false} importantForAccessibility="no-hide-descendants"><Ionicons name="add" size={18} color={colors.accent} /></View>
             <Text style={s.addRowLabel}>{t.contactInfo.addEmail}</Text>
           </Pressable>
         ) : (
@@ -281,13 +283,13 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
                   Alert.alert(t.contactInfo.phoneActions.copied);
                 }}
               >
-                <Text style={[styles.editBtnText, { color: colors.accent }]}>📋</Text>
+                <Ionicons name="copy-outline" size={20} color={colors.accent} />
               </Pressable>
               <Pressable onPress={() => openEditEmailModal(e)} style={styles.editBtn} accessibilityLabel={t.common.edit}>
                 <Text style={[styles.editBtnText, { color: colors.accent }]}>{t.common.edit}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemoveEmail(e)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
-                <Text style={s.removeBtnText}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.destructive} />
               </Pressable>
             </View>
           ))

@@ -212,7 +212,7 @@ export default function CalendarScreen() {
                     style={[styles.contactRow, { borderBottomColor: colors.separatorFine }]}
                     onPress={() => { setModalVisible(false); router.push(`/contact/${e.contact_id}`); }}
                   >
-                    <Text style={styles.cakeEmoji}>🎂</Text>
+                    <Ionicons name="gift-outline" size={24} color={colors.accent} style={styles.cakeIcon} />
                     <View style={styles.contactInfo}>
                       <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{displayName(e)}</Text>
                       <Text style={[styles.contactAge, { color: colors.textSecondary }]}>
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14, paddingHorizontal: 18,
     borderBottomWidth: 1, borderBottomColor: '#f4f4f4',
   },
-  cakeEmoji: { fontSize: 22, marginRight: 14 },
+  cakeIcon: { marginRight: 14 },
   contactInfo: { flex: 1 },
   contactName: { fontSize: 15, fontWeight: '600', color: '#222' },
   contactAge: { fontSize: 12, color: '#888', marginTop: 2 },
