@@ -102,7 +102,7 @@ export function formatFullAge(birthdate?: string | null): string | null {
 
 export function parseSearchFilter(query: string): SearchFilter {
   const trimmed = query.trim();
-  const m = trimmed.match(/^age:(>=|<=|>|<)?(\d+)$/i);
+  const m = trimmed.match(/^(?:age|edad):(>=|<=|>|<)?(\d+)$/i);
 
   if (m) {
     const opStr = m[1] ?? '';
@@ -114,7 +114,7 @@ export function parseSearchFilter(query: string): SearchFilter {
   return { type: 'text', value: trimmed };
 }
 
-export function getSearchChips(query: string): string[] {
+export function getSearchChips(query: string, ageLabel = 'Age'): string[] {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
@@ -128,7 +128,7 @@ export function getSearchChips(query: string): string[] {
       filter.op === 'lt' ? '<' :
       filter.op === 'gte' ? '≥' : '≤';
 
-    return `Age ${opLabel}${opLabel ? ' ' : ''}${filter.value}`;
+    return `${ageLabel} ${opLabel}${opLabel ? ' ' : ''}${filter.value}`;
   });
 }
 
