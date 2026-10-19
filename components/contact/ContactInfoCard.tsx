@@ -6,6 +6,7 @@ import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../utils/theme';
+import { isValidEmail, isValidPhone } from '../../utils/contactValidation';
 import { telHref, whatsappNumber } from '../../utils/phoneLinks';
 
 function normalizePhone(phone: string): string {
@@ -157,6 +158,10 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
       Alert.alert(t.common.error, t.contactInfo.phoneRequired);
       return;
     }
+    if (!isValidPhone(phoneInput)) {
+      Alert.alert(t.common.error, t.contactInfo.phoneInvalid);
+      return;
+    }
     const ok = editingPhoneId !== null
       ? await updateContactPhone(editingPhoneId, phoneInput.trim(), phoneLabelInput.trim() || undefined)
       : await addContactPhone(contactId, phoneInput.trim(), phoneLabelInput.trim() || undefined);
@@ -169,6 +174,10 @@ export default function ContactInfoCard({ contactId, initialPhones, initialEmail
   const handleSaveEmail = async () => {
     if (!emailInput.trim()) {
       Alert.alert(t.common.error, t.contactInfo.emailRequired);
+      return;
+    }
+    if (!isValidEmail(emailInput)) {
+      Alert.alert(t.common.error, t.contactInfo.emailInvalid);
       return;
     }
     const ok = editingEmailId !== null
