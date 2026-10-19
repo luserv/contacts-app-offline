@@ -10,7 +10,7 @@ const light = {
   text:            '#090909',
   textSecondary:   '#6C6C70',
   textTertiary:    '#C7C7CC',
-  placeholder:     '#6E6E73',
+  placeholder:     '#636366',
   accent:          '#0066D6',
   accentSubtle:    'rgba(0,122,255,0.10)',
   destructive:     '#FF3B30',
