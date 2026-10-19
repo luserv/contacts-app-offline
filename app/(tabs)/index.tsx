@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import AdBanner from '../../components/AdBanner';
 import Dropdown from '../../components/Dropdown';
 import {
@@ -46,6 +47,7 @@ import {
 import { MaritalStatus, useContacts } from '../../utils/context';
 import { useTheme } from '../../utils/theme';
 import { useI18n } from '../../utils/i18n';
+import { listLabel } from '../../utils/listLabels';
 import { useResponsive } from '../../utils/responsive';
 import { calcularEdad, edadEnFecha } from '../../utils/contactUtils';
 import { rescheduleExpiredBirthdayNotifications } from '../../utils/notifications';
@@ -106,7 +108,7 @@ export default function HomeScreen() {
 
   const router = useRouter();
   const { contacts, contactsLoading, fetchContacts, createContact, getMaritalStatuses, addIdentityCard, searchContacts } = useContacts();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { isDesktop, isTablet, r } = useResponsive();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -579,7 +581,7 @@ export default function HomeScreen() {
             {maritalStatusFilter.mode === 'specific' && (
               <View style={styles.orgPickerWrapper}>
                 <Dropdown
-                  options={maritalStatuses.map(s => ({ label: s.marital_status, value: s.status_id }))}
+                  options={maritalStatuses.map(s => ({ label: listLabel('marital', lang, s.status_id, s.marital_status), value: s.status_id }))}
                   value={maritalStatusFilter.statusId ?? null}
                   onSelect={(val) => setMaritalStatusFilter({
                     mode: 'specific',
@@ -666,7 +668,7 @@ export default function HomeScreen() {
 
               <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t.contacts.maritalStatus}</Text>
               <Dropdown
-                options={maritalStatuses.map(s => ({ label: s.marital_status, value: s.status_id }))}
+                options={maritalStatuses.map(s => ({ label: listLabel('marital', lang, s.status_id, s.marital_status), value: s.status_id }))}
                 value={selectedStatusId}
                 onSelect={setSelectedStatusId}
                 allowNull

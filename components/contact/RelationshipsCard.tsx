@@ -3,6 +3,7 @@ import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Styl
 import { Relationship, RelationshipType, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
 import { useSharedStyles } from './contactStyles';
+import { listLabel } from '../../utils/listLabels';
 import { useTheme } from '../../utils/theme';
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
 export default function RelationshipsCard({ contactId, initialRelationships, onNavigate }: Props) {
   const s = useSharedStyles();
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { getRelationships, addRelationship, removeRelationship, getRelationshipTypes, contacts } = useContacts();
 
   const [relationships, setRelationships] = useState<Relationship[]>(initialRelationships);
@@ -49,7 +50,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
   const handleRemove = (rel: Relationship) => {
     Alert.alert(
       t.relationships.deleteTitle,
-      t.relationships.deleteConfirm(`${rel.first_name} ${rel.surname}`, rel.label),
+      t.relationships.deleteConfirm(`${rel.first_name} ${rel.surname}`, listLabel('relationship', lang, rel.type_id, rel.label)),
       [
         { text: t.common.cancel, style: 'cancel' },
         {
@@ -99,7 +100,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
               </Pressable>
               <Pressable style={styles.relInfo} onPress={() => onNavigate(rel.related_contact_id)}>
                 <Text style={styles.relName}>{rel.first_name} {rel.surname}</Text>
-                <Text style={[styles.relType, { color: colors.textSecondary }]}>{rel.label}</Text>
+                <Text style={[styles.relType, { color: colors.textSecondary }]}>{listLabel('relationship', lang, rel.type_id, rel.label)}</Text>
               </Pressable>
               <Pressable onPress={() => handleRemove(rel)} style={s.removeBtn} accessibilityLabel={t.common.delete}>
                 <Text style={s.removeBtnText}>✕</Text>
@@ -126,7 +127,7 @@ export default function RelationshipsCard({ contactId, initialRelationships, onN
                       onPress={() => setSelectedTypeId(item.type_id)}
                     >
                       <Text style={[styles.optionText, selectedTypeId === item.type_id && [styles.optionTextSelected, { color: colors.accent }]]}>
-                        {item.label}
+                        {listLabel('relationship', lang, item.type_id, item.label)}
                       </Text>
                     </Pressable>
                   )}

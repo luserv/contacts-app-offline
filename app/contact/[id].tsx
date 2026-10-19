@@ -14,6 +14,7 @@ import RelationshipsCard from '../../components/contact/RelationshipsCard';
 import UrlsCard from '../../components/contact/UrlsCard';
 import { ContactBankAccount, ContactEmail, ContactKeyword, ContactNote, ContactOrganization, ContactPhone, ContactUrl, IdentityCard, Relationship, useContacts } from '../../utils/context';
 import { useI18n } from '../../utils/i18n';
+import { listLabel } from '../../utils/listLabels';
 import { useResponsive } from '../../utils/responsive';
 import { calcularEdad, ContactDetail, displayName, EXCLUDED_FIELDS, formatBirthdate, getZodiacKey, getZodiacSymbol } from '../../utils/contactUtils';
 import { useTheme } from '../../utils/theme';
@@ -140,7 +141,7 @@ export default function ContactDetailScreen() {
     contact.status_id ? {
       key: 'status',
       label: t.detail.maritalLabel,
-      value: maritalLabels[contact.status_id] ?? contact.status_id,
+      value: listLabel('marital', lang, contact.status_id, maritalLabels[contact.status_id] ?? contact.status_id),
     } : null,
   ].filter(Boolean) as { key: string; label: string; value: string; helperText?: string | null }[];
 
