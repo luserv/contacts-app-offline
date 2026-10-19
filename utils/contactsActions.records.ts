@@ -1,5 +1,6 @@
 import { db } from './db';
 import { toDisplay, toUpper } from './contactUtils';
+import { toTitleDisplay } from './textFormat';
 import type { CreateContactsActionsParams } from './contactsActionsShared';
 import type {
     Contact,
@@ -116,7 +117,7 @@ export function createContactsRecordActions({
             `, contactId);
             return result.map(r => ({
                 ...r,
-                organization_name: toDisplay(r.organization_name),
+                organization_name: toTitleDisplay(r.organization_name),
                 achievement: toDisplay(r.achievement),
             }));
         } catch (e) {
@@ -182,7 +183,7 @@ export function createContactsRecordActions({
                 'SELECT organization_id, name FROM organization WHERE name LIKE ? ORDER BY name ASC LIMIT 10',
                 `%${query.toUpperCase()}%`
             );
-            return result.map(r => ({ ...r, name: toDisplay(r.name) }));
+            return result.map(r => ({ ...r, name: toTitleDisplay(r.name) }));
         } catch (e) {
             console.error(e);
             return [];
@@ -196,7 +197,7 @@ export function createContactsRecordActions({
             );
             return result.map(r => ({
                 ...r,
-                bank_name: r.bank_name ? toDisplay(r.bank_name) : r.bank_name,
+                bank_name: r.bank_name ? toTitleDisplay(r.bank_name) : r.bank_name,
                 account_type: r.account_type ? toDisplay(r.account_type) : r.account_type,
                 label: r.label ? toDisplay(r.label) : r.label,
             }));
@@ -252,7 +253,7 @@ export function createContactsRecordActions({
                  WHERE bank_name LIKE ? ORDER BY bank_name ASC LIMIT 10`,
                 `%${query.toUpperCase()}%`
             );
-            return results.map(r => toDisplay(r.bank_name)).filter(Boolean) as string[];
+            return results.map(r => toTitleDisplay(r.bank_name)).filter(Boolean) as string[];
         } catch (e) { console.error(e); return []; }
     };
 
