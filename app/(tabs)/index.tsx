@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -80,6 +80,8 @@ function InitialsAvatar({ firstName, surname, size = 44 }: { firstName?: string 
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchInputRef = useRef<TextInput>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('first_name');
   const [sortModalVisible, setSortModalVisible] = useState(false);
@@ -114,6 +116,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const [searchResults, setSearchResults] = React.useState<ContactListItem[]>([]);
+  // Query the current results belong to; differs from searchQuery while the debounced search runs.
+  const [settledQuery, setSettledQuery] = React.useState('');
   const genderFilterOptions = React.useMemo(() => getGenderFilterOptions(t), [t]);
 
   React.useEffect(() => {
@@ -157,6 +161,24 @@ export default function HomeScreen() {
     return () => { cancelled = true; };
   }, [organizationFilter, contacts]);
 
+  const showChips = React.useMemo(
+    () => searchQuery.split('&').filter(p => p.trim()).length > 1 || parseSearchFilter(searchQuery).type === 'age',
+    [searchQuery],
+  );
+
+  // Web: Ctrl/Cmd+K focuses the search field
+  React.useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
   const chips = React.useMemo(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return [];
@@ -176,9 +198,10 @@ export default function HomeScreen() {
           return searchContacts(part);
         })
       );
-      if (resultSets.length === 0) { setSearchResults([]); return; }
+      if (resultSets.length === 0) { setSearchResults([]); setSettledQuery(trimmed); return; }
       const idSets = resultSets.map(r => new Set(r.map((c: ContactListItem) => c.contact_id)));
       setSearchResults(resultSets[0].filter((c: ContactListItem) => idSets.every(s => s.has(c.contact_id))));
+      setSettledQuery(trimmed);
     }, 150);
     return () => clearTimeout(timer);
   }, [searchQuery, searchContacts, contacts]);
@@ -304,10 +327,16 @@ export default function HomeScreen() {
       <View style={styles.innerWrap}>
         {/* Search bar */}
         <View style={[styles.searchWrap, isDesktop && styles.searchWrapDesktop, { backgroundColor: colors.bg }]}>
-          <View style={[styles.searchContainer, isDesktop && styles.searchContainerDesktop, { backgroundColor: colors.fill }]}>
+          <View style={[styles.searchContainer, isDesktop && styles.searchContainerDesktop, { backgroundColor: colors.fill, borderColor: searchFocused ? colors.accent : 'transparent' }]}>
             <Ionicons name="search" size={16} color={colors.placeholder} style={styles.searchIcon} />
             <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
+              ref={searchInputRef}
+              style={[styles.searchInput, { color: colors.text }, Platform.OS === 'web' && ({ outlineStyle: 'none' } as object)]}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              onKeyPress={(e) => { if (e.nativeEvent.key === 'Escape') setSearchQuery(''); }}
+              autoCorrect={false}
+              spellCheck={false}
               accessibilityRole="search"
               accessibilityLabel={t.contacts.search}
               accessibilityHint={t.contacts.searchA11yHint}
@@ -319,14 +348,14 @@ export default function HomeScreen() {
               returnKeyType="search"
             />
             {searchQuery.length > 0 && (
-              <Pressable accessibilityRole="button" accessibilityLabel={t.common.clearSearch} onPress={() => setSearchQuery('')} hitSlop={10} style={styles.clearBtn}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t.common.clearSearch} onPress={() => setSearchQuery('')} hitSlop={8} style={styles.clearBtn}>
                 <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
               </Pressable>
             )}
           </View>
         </View>
 
-        {chips.length > 0 && (
+        {showChips && chips.length > 0 && (
           <View style={[styles.activeFilterRow, isDesktop && styles.activeFilterRowDesktop]}>
             {chips.map((chip, i) => (
               <React.Fragment key={i}>
@@ -336,9 +365,6 @@ export default function HomeScreen() {
                 </View>
               </React.Fragment>
             ))}
-            <Pressable accessibilityRole="button" accessibilityLabel={t.common.clearSearch} onPress={() => setSearchQuery('')} hitSlop={15} style={{ padding: 4 }}>
-              <Ionicons name="close" size={14} color={colors.destructive} />
-            </Pressable>
           </View>
         )}
 
@@ -415,9 +441,21 @@ export default function HomeScreen() {
                 <Ionicons name="chevron-forward" size={17} color={colors.textTertiary} />
               </Pressable>
             )}
-            ListEmptyComponent={() => (
+            ListEmptyComponent={() => searchQuery.trim() && settledQuery !== searchQuery.trim() ? null : (
               <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t.contacts.empty}</Text>
+                {contacts.length > 0 ? (
+                  <>
+                    <Text style={[styles.emptyTitle, { color: colors.text }]}>{t.contacts.noResults}</Text>
+                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t.contacts.noResultsHint}</Text>
+                    {searchQuery.length > 0 && (
+                      <Pressable accessibilityRole="button" onPress={() => setSearchQuery('')} style={styles.emptyAction}>
+                        <Text style={[styles.emptyActionText, { color: colors.accent }]}>{t.common.clearSearch}</Text>
+                      </Pressable>
+                    )}
+                  </>
+                ) : (
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t.contacts.empty}</Text>
+                )}
               </View>
             )}
             contentContainerStyle={[styles.listContent, isDesktop && styles.listContentDesktop]}
@@ -745,7 +783,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 10,
     paddingHorizontal: 12,
-    height: 44,
+    minHeight: 48,
+    borderWidth: 2,
   },
   searchContainerDesktop: { maxWidth: 600 },
   searchIcon: { marginRight: 8 },
@@ -757,7 +796,8 @@ const styles = StyleSheet.create({
   },
   clearBtn: {
     marginLeft: 6,
-    padding: 2,
+    marginRight: -6,
+    padding: 8,
   },
 
   // Filter chips row
@@ -846,7 +886,10 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: 100 },
   listContentDesktop: { paddingBottom: 120 },
   emptyContainer: { flex: 1, alignItems: 'center', marginTop: 60 },
-  emptyText: { fontSize: 16, color: '#6C6C70' },
+  emptyTitle: { fontSize: 17, fontWeight: '600', marginBottom: 4 },
+  emptyText: { fontSize: 16, color: '#6C6C70', textAlign: 'center', paddingHorizontal: 24 },
+  emptyAction: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 16, marginTop: 8 },
+  emptyActionText: { fontSize: 16, fontWeight: '600' },
 
   // FAB
   fab: {
