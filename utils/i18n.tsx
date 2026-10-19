@@ -67,7 +67,9 @@ const translations = {
     },
     contacts: {
       search: 'Buscar',
-      searchHint: 'Buscar  (edad:23)',
+      searchHint: 'Buscar (edad:23)',
+      searchAgeLabel: 'Edad',
+      searchA11yHint: 'Podés filtrar por edad, por ejemplo edad:>30, y combinar filtros con &.',
       all: 'Todos',
       birthdateAll: 'Todos',
       birthdateWith: 'Con fecha',
@@ -482,7 +484,9 @@ const translations = {
     },
     contacts: {
       search: 'Search',
-      searchHint: 'Search  (age:23)',
+      searchHint: 'Search (age:23)',
+      searchAgeLabel: 'Age',
+      searchA11yHint: 'You can filter by age, for example age:>30, and combine filters with &.',
       all: 'All',
       birthdateAll: 'All',
       birthdateWith: 'With birthday',

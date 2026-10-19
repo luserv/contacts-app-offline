@@ -160,8 +160,8 @@ export default function HomeScreen() {
   const chips = React.useMemo(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return [];
-    return getSearchChips(searchQuery);
-  }, [searchQuery]);
+    return getSearchChips(searchQuery, t.contacts.searchAgeLabel);
+  }, [searchQuery, t.contacts.searchAgeLabel]);
 
   React.useEffect(() => {
     const trimmed = searchQuery.trim();
@@ -308,6 +308,9 @@ export default function HomeScreen() {
             <Ionicons name="search" size={16} color={colors.placeholder} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
+              accessibilityRole="search"
+              accessibilityLabel={t.contacts.search}
+              accessibilityHint={t.contacts.searchA11yHint}
               placeholder={t.contacts.searchHint}
               value={searchQuery}
               onChangeText={setSearchQuery}
