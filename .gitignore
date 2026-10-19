@@ -59,7 +59,8 @@ data/
 
 
 # Claude Code configuración local
-.claude/settings.local.json
+.claude/
+.impeccable/
 
 # Electron builds
 electron-dist/
